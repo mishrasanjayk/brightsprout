@@ -267,6 +267,10 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .avpick button{font-size:26px;padding:6px 0;border-radius:12px;background:var(--surface-2);border:2px solid transparent}
 .avpick button[aria-pressed="true"]{border-color:var(--leaf);background:var(--surface)}
 .sportpick{display:flex;flex-wrap:wrap;gap:6px}
+#gatebox{display:flex;flex-direction:column;gap:12px;align-items:stretch;text-align:center}
+#gatebox .gq{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:.5px}
+#gatebox input,.pinin{padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:24px;text-align:center;letter-spacing:6px;min-width:0}
+.pinin{font-size:18px;width:120px;letter-spacing:4px}
 </style>
 
 <div class="app">
@@ -301,6 +305,7 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 <div class="sheet" id="chat" hidden role="dialog" aria-modal="true" aria-label="Chat with Sprout"><div class="sheet-in chat-in"></div></div>
 <div class="party" id="party" hidden aria-live="polite"><div><span class="pi"></span><b></b><small></small></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sheet" id="gate" hidden role="dialog" aria-modal="true" aria-label="Grown-ups only"><div class="sheet-in" id="gatebox"></div></div>
 <div class="sheet" id="kidsheet" hidden role="dialog" aria-modal="true" aria-label="Child profile"><div class="sheet-in kform" id="kidbox"></div></div>
 
 <script>
@@ -386,7 +391,7 @@ const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketb
 S.settings=S.settings||{proof:false,autoDelete:true};
 if(!S.goals){const lk=S.kids.find(x=>x.id==="leo");S.goals=lk?[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:lk.lifetime-20,state:"active"}]:[]}
 S.settings.screen=S.settings.screen||{on:false,limits:{mia:30,leo:60,ava:90}};
-S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";S.today=S.today||{};if(S.demo===undefined)S.demo=S.kids.some(k=>["mia","leo","ava"].includes(k.id));
+S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";S.today=S.today||{};if(S.demo===undefined)S.demo=S.kids.some(k=>["mia","leo","ava"].includes(k.id));if(!S.setup&&S.kids.length&&S.who==="parent"){S.who=S.kids[0].id;S.tab="today"}
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
 S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
@@ -862,11 +867,15 @@ function renderSetup(){
   <div class="card"><div class="step"><i>2</i>Add your kids</div>
     <div style="margin-top:6px">${S.kids.length?S.kids.map(kidRow).join(""):`<p class="note">No kids yet. Add one child or more, ages 2 to 14.</p>`}</div>
     <button class="addbtn" data-addkid style="margin-top:10px">＋ Add ${S.kids.length?"another":"a"} child</button></div>
+  <div class="card"><div class="step"><i>3</i>Parent PIN <span class="note" style="font-family:var(--body);font-size:13px">(optional)</span></div>
+    <p class="note" style="margin-top:6px">Kids need this to open the Parent area. Skip it and they'll get a grown-up math question instead.</p>
+    <div class="row" style="margin-top:8px;gap:8px"><input class="pinin" id="spin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="4-digit parent PIN" value="${S.settings.pin||""}"></div></div>
   <button class="bigbtn" data-setupdone ${S.kids.length?"":"disabled"}>${S.kids.length?"Let's go! 🚀":"Add a child to start"}</button>
   <p class="note" style="text-align:center">First names and avatars only. Everything stays on this device. You can change kids any time in Parent › Settings.</p>
   <button class="linkbtn" data-demo>Just looking? Try the demo family</button></div>`;
   $("#tabs").innerHTML="";
   $("#sstate").onchange=e=>{S.settings.state=e.target.value;save()};
+  $("#spin").oninput=e=>{const v=e.target.value.replace(/\D/g,"").slice(0,4);e.target.value=v;S.settings.pin=v.length===4?v:"";save()};
 }
 let KF=null;
 function openKid(id){const k=id&&kid(id);
@@ -907,12 +916,40 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-addkid],[d
   else if("ksport" in d){KF.sports=KF.sports.includes(d.ksport)?KF.sports.filter(x=>x!==d.ksport):[...KF.sports,d.ksport];renderKid()}
   else if("ksave" in d)saveKid();
   else if("kdel" in d){if(!KF.del){KF.del=true;renderKid();return}dropKid(KF.id)}
-  else if("setupdone" in d){if(!S.kids.length)return;S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent any time for settings.")}
+  else if("setupdone" in d){if(!S.kids.length)return;const sp=$("#spin");if(sp&&sp.value&&sp.value.length!==4){toast("PIN needs 4 digits, or leave it empty");return}S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent any time for settings.")}
   else if("demo" in d){S=demoSeed();save();render();window.scrollTo(0,0);toast("Demo family loaded. Tap Exit demo to start your own.")}
   else if("startover" in d){if(Date.now()-eraseArmed>3000){eraseArmed=Date.now();t.textContent="Tap again to erase all kids, Stars and settings";return}
     eraseArmed=0;S=seed();save();render();window.scrollTo(0,0);toast("Everything erased. Let's set up your family.")}
 });
 $("#kidsheet").onclick=e=>{if(e.target.id==="kidsheet")closeKid()};
+/* ---------- PARENT GATE: kids can't open the Parent area without a PIN or a grown-up math question. ---------- */
+let GATE=null,gateOpen=false;
+const newProblem=hard=>{const r=(lo,n)=>lo+Math.floor(Math.random()*n),a=r(12,18),b=hard?r(13,17):r(6,4);return {q:`${a} × ${b}`,ans:a*b}};
+function openGate(btn){GATE={btn,mode:S.settings.pin?"pin":"math",tries:0,...newProblem()};renderGate();$("#gate").hidden=false;setTimeout(()=>{const i=$("#gin");if(i)i.focus()},50)}
+function closeGate(){$("#gate").hidden=true;GATE=null}
+function renderGate(){const pin=GATE.mode==="pin";
+  $("#gatebox").innerHTML=`<div class="row"><b class="grow" style="font-family:var(--display);font-size:20px;text-align:left">🔒 Grown-ups only</b><button class="no" data-gclose>Cancel</button></div>
+  <p class="note">${pin?"Enter your parent PIN.":"Answer this to open the Parent area."}</p>
+  ${pin?"":`<div class="gq" aria-live="polite">${GATE.q} = ?</div>`}
+  <input id="gin" type="${pin?"password":"text"}" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="${pin?"Parent PIN":"Answer"}" placeholder="${pin?"••••":""}">
+  <button class="bigbtn" data-gok>Open Parent area</button>
+  ${pin?`<button class="linkbtn" data-gforgot>Forgot PIN?</button>`:""}`;
+  const i=$("#gin");i.onkeydown=e=>{if(e.key==="Enter")checkGate()};i.oninput=()=>{i.value=i.value.replace(/\D/g,"");if(pin&&i.value.length===4)checkGate()}}
+function checkGate(){const v=$("#gin").value.trim();if(!v)return;
+  const ok=GATE.mode==="pin"?v===S.settings.pin:+v===GATE.ans;
+  if(ok){const b=GATE.btn;closeGate();gateOpen=true;b.click();gateOpen=false;return}
+  GATE.tries++;Object.assign(GATE,newProblem(GATE.hard));renderGate();toast(GATE.mode==="pin"?"That PIN isn't right":"Not quite. Try this one.");setTimeout(()=>{const i=$("#gin");if(i)i.focus()},30)}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-who=parent]");
+  if(!b||gateOpen||S.who==="parent"||(typeof NATIVE!=="undefined"&&NATIVE))return;
+  e.stopPropagation();e.preventDefault();openGate(b)},true);
+document.addEventListener("click",e=>{const t=e.target.closest("[data-gclose],[data-gok],[data-gforgot],[data-pinsave],[data-pinoff]");if(!t)return;const d=t.dataset;
+  if("gclose" in d)closeGate();
+  else if("gok" in d)checkGate();
+  else if("gforgot" in d){GATE.mode="math";GATE.hard=true;Object.assign(GATE,newProblem(true));renderGate();toast("Answer this, then set a new PIN in Settings")}
+  else if("pinsave" in d){const v=$("#setpin").value.replace(/\D/g,"");if(v.length!==4){toast("PIN needs exactly 4 digits");return}S.settings.pin=v;save();render();toast("Parent PIN saved")}
+  else if("pinoff" in d){S.settings.pin="";save();render();toast("PIN removed. Kids get a math question instead.")}
+});
+$("#gate").onclick=e=>{if(e.target.id==="gate")closeGate()};
 /* ---------- SCREEN TIME LINK (optional, parent-controlled). Prototype simulates usage; a real iPhone app would use Apple's Screen Time API. ---------- */
 function scr(k){S.screen=S.screen||{};const d=dayNo();let x=S.screen[k.id];if(!x||x.day!==d)x=S.screen[k.id]={day:d,used:0,extra:0};return x}
 const limitOf=k=>(S.settings.screen.limits[k.id]||60);
@@ -1100,6 +1137,10 @@ function viewSettings(){
         ${proofOn()?"":`<p class="note">With no options picked, kids just tap Done like before.</p>`}</div>`:""}
       <label class="tgl"><input type="checkbox" id="setdel" ${S.settings.autoDelete?"checked":""}><span>Delete each clip as soon as I approve it</span></label>
     </div></div>
+  <div class="card"><div class="section-title"><h3>🔒 Parent lock</h3><span class="tag st-approved">On</span></div>
+    <p class="note" style="margin-top:6px">${S.settings.pin?"Kids need your 4-digit PIN to open the Parent area.":"Kids must answer a grown-up math question to open the Parent area. Add a PIN to make it stronger."}</p>
+    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap"><input class="pinin" id="setpin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="New 4-digit PIN"><button class="ok" data-pinsave>${S.settings.pin?"Change PIN":"Set PIN"}</button>${S.settings.pin?`<button class="no" data-pinoff>Remove PIN</button>`:""}</div>
+    <p class="demo" style="margin-top:8px;text-align:left">The PIN is saved only on this device. This is a tryout lock, not bank-level security.</p></div>
   <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. Everything is saved only on this device.</p>
     <button class="no" data-startover style="margin-top:10px;color:var(--berry)">Erase everything and start over</button></div>`;
 }
