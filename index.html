@@ -242,6 +242,11 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .goalform .row select{flex:1}
 .gnum{display:flex;align-items:center;gap:6px;font-weight:800;flex:none}.gnum input{width:78px}
 .gicons{display:flex;gap:6px;flex-wrap:wrap}.gicons .pfilter{font-size:18px;padding:6px 10px}
+.scrchip b{font-size:15px}.bar.warn i{background:var(--berry)}
+.lock{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:20px 4px}
+.lock-i{font-size:80px;line-height:1;animation:bob 3s ease-in-out infinite}
+.lock h2{font-size:26px}.lock>p{margin:0;color:var(--muted);font-weight:600;max-width:34ch;line-height:1.45}
+.ideas{margin:8px 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-weight:700}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
 </style>
 
@@ -353,6 +358,7 @@ let S; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.kids)S=s
 const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketball","running"]};
 S.settings=S.settings||{proof:false,autoDelete:true};
 if(!S.goals){const lk=S.kids.find(x=>x.id==="leo");S.goals=lk?[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:lk.lifetime-20,state:"active"}]:[]}
+S.settings.screen=S.settings.screen||{on:false,limits:{mia:30,leo:60,ava:90}};
 S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
@@ -468,7 +474,7 @@ function goalsCard(k){const gs=(S.goals||[]).filter(g=>g.kid===k.id&&g.state!=="
   <div class="list" style="margin-top:8px">${gs.map(g=>{const pr=gProg(g);return `<div class="goal ${g.state}"><span class="gi" aria-hidden="true">${g.icon}</span><div class="grow"><b>${esc(g.reward)}</b>
     <div class="bar sun" style="margin:6px 0 4px"><i style="width:${pr/g.target*100}%"></i></div>
     <small>${g.state==="reached"?"🎉 You did it! Your parent will give you this reward.":`${pr} of ${g.target} ⭐ earned · ${g.target-pr} to go`}</small></div></div>`}).join("")}</div></div>`}
-function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.goals||[]).filter(g=>g.state==="reached").length+(S.homework||[]).filter(h=>h.state==="pending").length}
+function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.timeReq||[]).filter(q=>q.state==="asked").length+(S.goals||[]).filter(g=>g.state==="reached").length+(S.homework||[]).filter(h=>h.state==="pending").length}
 
 function render(){
   // profiles
@@ -485,7 +491,7 @@ function render(){
   $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();window.scrollTo(0,0)});
   const M=$("#main");
   if(isParent){M.innerHTML=({approve:viewApprove,videos:viewVideos,rewards:viewRewards,family:viewFamily,settings:viewSettings})[S.tab]();bindParent()}
-  else{const k=kid(S.who);M.innerHTML=(S.settings.ai?`<button class="askfab" data-askspr aria-label="Ask Sprout">🌱 Ask Sprout</button>`:"")+({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
+  else{const k=kid(S.who);if(locked(k)){M.innerHTML=lockView(k);bindLock(k);return}M.innerHTML=(S.settings.ai?`<button class="askfab" data-askspr aria-label="Ask Sprout">🌱 Ask Sprout</button>`:"")+({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
 }
 
 /* ---------- TODAY'S CHALLENGE: watch & try, learning quiz, food quiz ---------- */
@@ -807,6 +813,21 @@ function chatHistory(){
 }
 
 const KC={mia:"#F2A20C",leo:"#F07A2E",ava:"#8A63E0"};
+/* ---------- SCREEN TIME LINK (optional, parent-controlled). Prototype simulates usage; a real iPhone app would use Apple's Screen Time API. ---------- */
+function scr(k){S.screen=S.screen||{};const d=dayNo();let x=S.screen[k.id];if(!x||x.day!==d)x=S.screen[k.id]={day:d,used:0,extra:0};return x}
+const limitOf=k=>(S.settings.screen.limits[k.id]||60);
+const timeLeft=k=>{const x=scr(k);return Math.max(0,limitOf(k)+x.extra-x.used)};
+const locked=k=>S.settings.screen.on&&timeLeft(k)<=0;
+function addMinutes(k,m){scr(k).extra+=m;const r=(S.timeReq||[]).find(q=>q.kid===k.id&&q.state==="asked");if(r)r.state="given"}
+const screenMins=t=>{const m=/(\d+)\s*(min|minute)/i.exec(t);return /screen/i.test(t)&&m?+m[1]:0};
+function screenChip(k){if(!S.settings.screen.on)return "";const l=timeLeft(k),lim=limitOf(k)+scr(k).extra;
+  return `<div class="card scrchip"><div class="row"><span style="font-size:26px" aria-hidden="true">⏱️</span><div class="grow"><b>${l} min of screen time left today</b><div class="bar ${l<10?"warn":"sky"}" style="margin-top:6px"><i style="width:${lim?l/lim*100:0}%"></i></div></div></div>
+  <button class="reset" data-simuse style="margin-top:4px">Demo: use 15 minutes</button></div>`}
+function lockView(k){const req=(S.timeReq||[]).find(q=>q.kid===k.id&&q.state==="asked");
+  return `<div class="lock"><span class="lock-i" aria-hidden="true">🌙</span><h2>Screen time is done for today</h2>
+  <p>Great job today, ${esc(k.name)}! Your ${limitOf(k)} minutes are used up. Time for some real-world fun.</p>
+  ${req?`<div class="tag" style="font-size:13px;padding:8px 14px">⏳ Asked a parent for more time</div>`:`<button class="qbtn" data-askmore style="padding:14px 20px">🙋 Ask a parent for more time</button>`}
+  <div class="card" style="width:100%;text-align:left"><b>Ideas that earn Stars offline</b><ul class="ideas"><li>⚽ Play outside for 30 minutes</li><li>📖 Read a book</li><li>🍳 Help make dinner</li><li>🎲 Play a board game with family</li></ul><p class="note">Tell a parent when you're done, and they can give you your Stars.</p></div></div>`}
 /* ---------- KID VIEWS ---------- */
 function header(k){
   const b=BANDS[k.band];
@@ -832,7 +853,7 @@ function viewToday(k){
   if(k.band==="sprout"){
     const grown=Object.values(st).filter(v=>v==="done").length;
     const sprout=["🌰","🌱","🌿","🪴","🌳","🌳"][Math.min(grown,5)];
-    return header(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
+    return header(k)+screenChip(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
     <div class="card pet"><div class="sprout" id="sprout" aria-hidden="true">${sprout}</div>
       <div class="grow" style="flex:1"><b style="font-family:var(--display);font-size:18px">Sunny the sprout</b>
       <p class="note">Sunny grows each time ${k.name} does a healthy thing. Ask a grown-up to tap “Done!” with you.</p>
@@ -847,7 +868,7 @@ function viewToday(k){
   }
   const list=acts(k).filter(a=>S.filter==="all"||a.p===S.filter);
   const total=acts(k).length,done=Object.values(st).filter(v=>v==="done").length;
-  return header(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
+  return header(k)+screenChip(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
   <div class="card"><div class="section-title"><h3>Today’s quests</h3><span>${done} of ${total}</span></div>
     <div class="bar" style="margin-top:10px"><i style="width:${done/total*100}%"></i></div>
     ${k.band==="trail"?`<p class="note" style="margin-top:10px">You log your own quests. Parents can spot-check.</p>`:`<p class="note" style="margin-top:10px">Tap Done and a parent will give you your Stars.</p>`}</div>
@@ -891,7 +912,9 @@ function viewMe(k){
   <div class="card"><div class="section-title"><h3>My habits this week</h3></div>
     <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>`;
 }
+function bindLock(k){const b=document.querySelector("[data-askmore]");if(b)b.onclick=()=>{S.timeReq=S.timeReq||[];S.timeReq.push({id:"t"+Date.now(),kid:k.id,state:"asked"});toast("Asked a parent for more time");save();render()}}
 function bindKid(k){
+  const su=document.querySelector("[data-simuse]");if(su)su.onclick=()=>{scr(k).used+=15;if(locked(k))toast("Screen time is up!");save();render()};
   document.querySelectorAll("[data-askspr]").forEach(b=>b.onclick=()=>openChat(k));
   bindLearn(k);
   bindDaily(k);
@@ -924,6 +947,8 @@ function viewApprove(){
     <div class="list">${hws.length?hws.map(h=>{const k=kid(h.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${HW_SUBJ[h.subj]||"📄"}</span>
       <div class="grow"><div class="who">${k.av} ${k.name} · ${esc(h.subj)}</div><b style="font-size:15px">${esc(h.t)}</b></div>
       <button class="no" data-hwno="${h.id}">Not yet</button><button class="ok" data-hwok="${h.id}">+${Math.round(20*mult(k))} ⭐</button></div>${proofView(h.kid,"hw"+h.id)}`}).join(""):`<p class="empty">No homework waiting.</p>`}</div></div>`})()}
+  ${(()=>{const tr=(S.timeReq||[]).filter(q=>q.state==="asked");return tr.length?`<div class="card"><div class="section-title"><h3>⏱️ More time requests</h3><span>${tr.length}</span></div><div class="list">${tr.map(q=>{const k=kid(q.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${k.av}</span><div class="grow"><b style="font-size:15px">${k.name} asks for more screen time</b><div class="who">Used ${scr(k).used} min today</div></div>
+      <button class="no" data-tno="${q.id}">Not today</button><button class="ok" data-tallow="${q.id}|15">+15</button><button class="ok" data-tallow="${q.id}|30">+30</button></div>`}).join("")}</div></div>`:""})()}
   ${(()=>{const rg=(S.goals||[]).filter(g=>g.state==="reached");return rg.length?`<div class="card"><div class="section-title"><h3>🎯 Goals reached</h3><span>${rg.length}</span></div><div class="list">${rg.map(g=>{const k=kid(g.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${g.icon}</span><div class="grow"><div class="who">${k.av} ${k.name} earned ${g.target} ⭐</div><b style="font-size:15px">${esc(g.reward)}</b></div><button class="ok" data-ggive="${g.id}">Give it</button></div>`}).join("")}</div></div>`:""})()}
   <div class="card"><div class="section-title"><h3>Reward requests</h3><span>${reqs.length} waiting</span></div>
     <div class="list">${reqs.length?reqs.map(q=>{const k=kid(q.kid),r=rewardById(q.reward);return `<div class="appr"><span style="font-size:28px" aria-hidden="true">${r.icon}</span>
@@ -950,6 +975,13 @@ function viewSettings(){
   <div class="card"><h3 style="font-size:18px">🏫 School</h3><p class="note" style="margin-top:6px">Quizzes follow each child's grade, using common US school topics.</p>
     <div class="list" style="margin-top:10px">${S.kids.map(k=>`<label class="setrow"><span>${k.av} ${k.name}</span><select data-grade="${k.id}">${Object.entries(GRADE_NAMES).map(([g,n])=>`<option value="${g}" ${+g===gradeOf(k)?"selected":""}>${n}</option>`).join("")}</select></label>`).join("")}
       <label class="setrow"><span>🗺️ Our state</span><select id="setstate">${ST_NAMES.map(n=>`<option ${n===S.settings.state?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+  <div class="card"><div class="section-title"><h3>⏱️ Screen time link</h3><span class="tag ${S.settings.screen.on?"st-approved":""}">${S.settings.screen.on?"On":"Off"}</span></div>
+    <p class="note" style="margin-top:6px">Optional. Set a daily screen time for each child. When it runs out, apps lock until you allow more. Goals and rewards that mention screen time minutes add time automatically.</p>
+    <div class="list" style="margin-top:10px"><label class="tgl"><input type="checkbox" id="setscr" ${S.settings.screen.on?"checked":""}><span>Link my kids' screen time to BrightSprout</span></label>
+    ${S.settings.screen.on?S.kids.map(k=>{const x=scr(k);return `<div class="setrow"><span>${k.av} ${k.name}<small class="note" style="display:block">Used ${x.used} of ${limitOf(k)+x.extra} min today</small></span>
+      <select data-limit="${k.id}" aria-label="Daily limit for ${k.name}">${[15,30,45,60,90,120,180].map(m=>`<option value="${m}" ${m===limitOf(k)?"selected":""}>${m} min a day</option>`).join("")}</select></div>
+      <div class="row" style="justify-content:flex-end;gap:6px"><button class="no" data-addmin="${k.id}|15">+15 min</button><button class="no" data-addmin="${k.id}|30">+30 min</button></div>`}).join(""):""}</div>
+    <p class="demo" style="margin-top:8px">In this prototype, screen use is simulated with a demo button. Blocking other apps for real needs the native iPhone app.</p></div>
   <div class="card"><div class="section-title"><h3>🌱 Sprout AI helper</h3><span class="tag ${S.settings.ai?"st-approved":""}">${S.settings.ai?"On":"Off"}</span></div>
     <p class="note" style="margin-top:6px">Sprout is an AI study buddy powered by Claude. It answers questions at your child's age and grade, helps with homework step by step without handing over answers, and makes quizzes and practice tests. It steers away from grown-up topics and reminds kids never to share personal info.</p>
     <div class="list" style="margin-top:10px"><label class="tgl"><input type="checkbox" id="setai" ${S.settings.ai?"checked":""}><span>I'm the parent and I allow my kids to chat with Sprout</span></label></div>
@@ -998,12 +1030,17 @@ function viewFamily(){
 function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
+  const sc=$("#setscr");if(sc)sc.onchange=()=>{S.settings.screen.on=sc.checked;toast(sc.checked?"Screen time link is on":"Screen time link is off");save();render()};
+  document.querySelectorAll("[data-limit]").forEach(sel=>sel.onchange=()=>{S.settings.screen.limits[sel.dataset.limit]=+sel.value;toast("Daily limit updated");save();render()});
+  document.querySelectorAll("[data-addmin]").forEach(b=>b.onclick=()=>{const [id,m]=b.dataset.addmin.split("|");addMinutes(kid(id),+m);toast(`Gave ${kid(id).name} ${m} more minutes`);save();render()});
+  document.querySelectorAll("[data-tallow]").forEach(b=>b.onclick=()=>{const [rid,m]=b.dataset.tallow.split("|"),r=S.timeReq.find(x=>x.id===rid);addMinutes(kid(r.kid),+m);r.state="given";burst(b);toast(`${kid(r.kid).name} got ${m} more minutes`);save();render()});
+  document.querySelectorAll("[data-tno]").forEach(b=>b.onclick=()=>{S.timeReq.find(x=>x.id===b.dataset.tno).state="no";toast("Not today. Screen stays locked.");save();render()});
   let gicon=GOAL_ICONS[0];
   document.querySelectorAll("[data-gicon]").forEach(b=>b.onclick=()=>{gicon=b.dataset.gicon;document.querySelectorAll("[data-gicon]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
   const ga=$("#gadd");if(ga)ga.onsubmit=e=>{e.preventDefault();const k=kid($("#gkid").value),t=Math.max(5,Math.min(2000,parseInt($("#gtarget").value,10)||50)),r=$("#greward").value.trim();if(!r)return;
     S.goals=S.goals||[];S.goals.push({id:"g"+Date.now(),kid:k.id,target:t,reward:r,icon:gicon,start:k.lifetime,state:"active"});toast(`Goal set for ${k.name}`);save();render()};
   document.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{S.goals=S.goals.filter(g=>g.id!==b.dataset.gdel);toast("Goal removed");save();render()});
-  document.querySelectorAll("[data-ggive]").forEach(b=>b.onclick=()=>{const g=S.goals.find(x=>x.id===b.dataset.ggive);g.state="given";burst(b);toast(`${g.reward} for ${kid(g.kid).name}!`);save();render()});
+  document.querySelectorAll("[data-ggive]").forEach(b=>b.onclick=()=>{const g=S.goals.find(x=>x.id===b.dataset.ggive);g.state="given";if(S.settings.screen.on&&screenMins(g.reward))addMinutes(kid(g.kid),screenMins(g.reward));burst(b);toast(`${g.reward} for ${kid(g.kid).name}!`);save();render()});
   const sa=$("#setai");if(sa)sa.onchange=()=>{S.settings.ai=sa.checked;toast(sa.checked?"Sprout is on for your kids":"Sprout is off");save();render()};
   document.querySelectorAll("[data-chclear]").forEach(b=>b.onclick=()=>{delete S.chats[b.dataset.chclear];toast("Chats deleted");save();render()});
   document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);toast(`${k.name} got ${p} Stars for homework`);save();render()});
@@ -1025,7 +1062,7 @@ function bindParent(){
   document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.approve.split("|");if(S.settings.autoDelete)dropProof(id,aid);const k=kid(id);S.today[id][aid]="done";const p=award(k,actById(aid));burst(b);toast(`${k.name} got ${p} Stars`);save();render()});
   document.querySelectorAll("[data-deny]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.deny.split("|");dropProof(id,aid);delete S.today[id][aid];toast("Moved back to the quest list");save();render()});
   document.querySelectorAll("[data-rok]").forEach(b=>b.onclick=()=>{const q=S.requests.find(x=>x.id===b.dataset.rok),k=kid(q.kid),r=rewardById(q.reward);
-    if(k.stars<r.c){toast(`${k.name} needs ${r.c-k.stars} more Stars`);return}k.stars-=r.c;q.state="given";burst(b);toast(`${r.t} for ${k.name}!`);save();render()});
+    if(k.stars<r.c){toast(`${k.name} needs ${r.c-k.stars} more Stars`);return}k.stars-=r.c;q.state="given";if(S.settings.screen.on&&screenMins(r.t))addMinutes(k,screenMins(r.t));burst(b);toast(`${r.t} for ${k.name}!`);save();render()});
   document.querySelectorAll("[data-rdeny]").forEach(b=>b.onclick=()=>{S.requests.find(x=>x.id===b.dataset.rdeny).state="later";toast("Saved for later");save();render()});
   document.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.inc);r.c=Math.min(1000,r.c+10);save();render()});
   document.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.dec);r.c=Math.max(10,r.c-10);save();render()});
