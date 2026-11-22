@@ -162,7 +162,7 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
 .opts.big .opt{text-align:center;font-size:22px;padding:18px 8px}
 .opt.right{border-color:var(--leaf);background:var(--surface-2);color:var(--leaf)}.opt.wrong{border-color:var(--berry);color:var(--berry)}
 .opt:disabled{cursor:default}
-.why{margin-top:12px;padding:12px;border-radius:14px;background:var(--sun-soft);font-size:14px;line-height:1.45}.why.ok{background:var(--surface-2)}
+.why{margin-top:12px;padding:12px;border-radius:14px;background:var(--sun-soft);font-size:14px;line-height:1.45}.why.good{background:var(--surface-2)}
 .vslot{padding:10px 0;border-bottom:1px solid var(--line)}.vslot:last-child{border-bottom:0}
 .vslot b{display:block;font-size:14px}
 .vt{display:block;font-size:12px;font-weight:700;color:var(--sky);text-decoration:none;margin-top:2px;line-height:1.35}
@@ -181,6 +181,42 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
 .subopts b{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .tgl{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:700;line-height:1.35;cursor:pointer}
 .tgl input{width:22px;height:22px;flex:none;accent-color:var(--leaf);margin:0}
+/* Playful kid styling */
+body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-mix(in srgb,var(--kc) 14%,transparent) 1.5px,transparent 1.6px);background-size:22px 22px}
+.hero{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;padding:18px 16px;border-radius:24px;color:#fff;
+  background:linear-gradient(135deg,var(--kc),color-mix(in srgb,var(--kc) 55%,#1F2B24));box-shadow:0 6px 0 color-mix(in srgb,var(--kc) 60%,#000)}
+.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.14)}
+.hero::before{content:"";position:absolute;right:50px;bottom:-60px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.1)}
+.hero-av{flex:none;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-size:44px;background:rgba(255,255,255,.25);animation:bob 3s ease-in-out infinite;z-index:1}
+.hero-art{font-size:56px;flex:none;z-index:1;animation:bob 3s ease-in-out infinite}
+.hero-txt{flex:1;min-width:0;z-index:1}
+.hero h2{font-size:26px;color:#fff}.hero p{margin:2px 0 0;font-weight:700;font-size:14px;opacity:.95}
+.eyebrow{display:inline-block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;background:rgba(255,255,255,.25);padding:3px 8px;border-radius:999px;margin-bottom:4px}
+.xp{height:10px;border-radius:999px;background:rgba(255,255,255,.3);margin-top:8px;overflow:hidden}.xp i{display:block;height:100%;background:#FFE27A;border-radius:999px}
+.xpl{font-size:11px;font-weight:800;opacity:.9}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.qbtn,.ok,.rbtn{box-shadow:0 4px 0 rgba(0,0,0,.18);transition:transform .08s,box-shadow .08s}
+.qbtn:active,.ok:active,.rbtn:active,.subj:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.18)}
+.stat{border-width:2px}.stat.stars{background:var(--sun-soft)}
+.tip{display:flex;gap:10px;align-items:flex-start}
+.tip-m{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:var(--surface);border:2px solid var(--line)}
+.tip p{margin:0;position:relative;background:var(--surface);border:2px solid var(--line);border-radius:18px;border-top-left-radius:4px;padding:10px 12px;font-size:14px;line-height:1.4;font-weight:600}
+.subjects{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.subj{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px;border-radius:22px;color:#fff;text-align:left;
+  background:linear-gradient(150deg,var(--sc),color-mix(in srgb,var(--sc) 65%,#000));box-shadow:0 5px 0 color-mix(in srgb,var(--sc) 55%,#000);transition:transform .08s,box-shadow .08s}
+.subj .si{font-size:34px;line-height:1}.subj b{font-family:var(--display);font-size:20px;font-weight:600}.subj small{font-weight:800;font-size:12px;opacity:.9}
+.hw{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.hw:last-child{border-bottom:0}
+.hw .hwi{font-size:26px;flex:none}.hw b{display:block;font-size:15px;line-height:1.25}.hw small{color:var(--muted);font-weight:700;font-size:12px}
+.hw.done b{color:var(--muted)}
+.addform select,.setrow select{padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;max-width:100%}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:800}
+.setrow select{flex:0 1 190px;min-width:0}
+.qdots{display:flex;gap:6px;margin-top:10px}.qdots i{flex:1;height:6px;border-radius:999px;background:var(--surface-2)}.qdots i.past{background:var(--leaf)}.qdots i.now{background:var(--sun)}
+.party{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:rgba(10,20,14,.45);pointer-events:none}
+.party>div{background:var(--surface);border-radius:28px;padding:24px 32px;display:flex;flex-direction:column;align-items:center;gap:4px;animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+.party .pi{font-size:72px;line-height:1}.party b{font-family:var(--display);font-size:28px;font-weight:600}.party small{font-weight:800;color:var(--star);font-size:18px}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion: reduce){.hero-av,.hero-art{animation:none}.party>div{animation:none}}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
 </style>
 
@@ -213,6 +249,7 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
     </div>
   </div>
 </div>
+<div class="party" id="party" hidden aria-live="polite"><div><span class="pi"></span><b></b><small></small></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -280,6 +317,7 @@ function seed(){
       {id:"r5",icon:"📕",t:"A new book",c:150},
       {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}],
     requests:[{id:"q0",kid:"ava",reward:"r2",state:"asked"}],
+    homework:[{id:"h1",kid:"leo",subj:"Math",t:"Math worksheet page 42",state:"todo"},{id:"h2",kid:"ava",subj:"Science",t:"Lab report on plant growth",state:"pending"}],
     goal:{t:"Weekend at the lake",target:1000,have:640}
   };
 }
@@ -287,6 +325,7 @@ const KEY="smartkids-proto-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.kids)S=seed();
 const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketball","running"]};
 S.settings=S.settings||{proof:false,autoDelete:true};
+S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
 S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
@@ -390,7 +429,7 @@ function award(k,a){
   S.goal.have=Math.min(S.goal.target,S.goal.have+pts);
   return pts;
 }
-function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length}
+function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.homework||[]).filter(h=>h.state==="pending").length}
 
 function render(){
   // profiles
@@ -399,15 +438,15 @@ function render(){
     `<button class="chip" aria-pressed="${S.who==="parent"}" data-who="parent"><span class="av">👪</span>Parent</button>`;
   P.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{S.who=b.dataset.who;S.tab=S.who==="parent"?"approve":"today";S.filter="all";save();render();window.scrollTo(0,0)});
   // tabs
-  const isParent=S.who==="parent";
-  const tabs=isParent?[["approve","✅","Approve"],["videos","🎬","Videos"],["rewards","🎁","Rewards"],["family","📊","Week"],["settings","⚙️","Settings"]]:[["today","🗓️","Today"],["watch","🎬","Videos"],["shop","🎁","Shop"],["me","🏅","Me"]];
+  const isParent=S.who==="parent";document.body.classList.toggle("kidmode",!isParent);document.body.style.setProperty("--kc",isParent?"var(--leaf)":(KC[S.who]||"var(--leaf)"));
+  const tabs=isParent?[["approve","✅","Approve"],["videos","🎬","Videos"],["rewards","🎁","Rewards"],["family","📊","Week"],["settings","⚙️","Settings"]]:[["today","🗓️","Today"],["learn","📚","Learn"],["watch","🎬","Videos"],["shop","🎁","Shop"],["me","🏅","Me"]];
   if(!tabs.some(t=>t[0]===S.tab))S.tab=tabs[0][0];
   const pc=pendingCount();
   $("#tabs").innerHTML=tabs.map(([id,i,l])=>`<button data-tab="${id}" ${S.tab===id?'aria-current="page"':""}><span class="i" aria-hidden="true">${i}</span>${l}${id==="approve"&&pc?`<span class="dot">${pc}</span>`:""}</button>`).join("");
   $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();window.scrollTo(0,0)});
   const M=$("#main");
   if(isParent){M.innerHTML=({approve:viewApprove,videos:viewVideos,rewards:viewRewards,family:viewFamily,settings:viewSettings})[S.tab]();bindParent()}
-  else{const k=kid(S.who);M.innerHTML=({today:viewToday,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
+  else{const k=kid(S.who);M.innerHTML=({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
 }
 
 /* ---------- TODAY'S CHALLENGE: watch & try, learning quiz, food quiz ---------- */
@@ -469,7 +508,7 @@ let QZ=null; // active quiz {kind,i,score,picked}
 function dstate(k){S.daily=S.daily||{};const d=S.daily[k.id];if(!d||d.day!==dayNo())S.daily[k.id]={day:dayNo(),tried:false,learn:null,food:null};return S.daily[k.id]}
 function daily(k){
   const d=dstate(k);
-  if(QZ&&QZ.kid===k.id)return quizPanel(k);
+  if(QZ&&QZ.kid===k.id&&QZ.where==="daily")return quizPanel(k);
   const sp=todaysSport(k),v=sportVids(sp,k.band)[1],sport=SPORTS[sp];
   const steps=[d.tried,d.learn!==null,d.food!==null].filter(Boolean).length;
   const step=(n,done,icon,title,sub,actions)=>`<div class="dstep ${done?"done":""}"><span class="dnum">${done?"✓":n}</span><span class="dic" aria-hidden="true">${icon}</span><div class="txt"><b>${title}</b><small>${sub}</small></div><div class="dact">${actions}</div></div>`;
@@ -483,32 +522,187 @@ function daily(k){
   </div>`;
 }
 function quizPanel(k){
-  const qs=todaysQs(QZ.kind,k.band),q=qs[QZ.i],ans=QZ.picked!==null;
-  return `<div class="card daily quiz"><div class="section-title"><h3>${DQ[QZ.kind].i} ${DQ[QZ.kind].n}</h3><span>Question ${QZ.i+1} of 3</span></div>
+  const qs=QZ.qs,q=qs[QZ.i],ans=QZ.picked!==null;
+  return `<div class="card daily quiz"><div class="section-title"><h3>${QZ.icon} ${esc(QZ.title)}</h3><span>Question ${QZ.i+1} of ${qs.length}</span></div>
+    <div class="qdots" aria-hidden="true">${qs.map((_,i)=>`<i class="${i<QZ.i?"past":i===QZ.i?"now":""}"></i>`).join("")}</div>
     <p class="qq">${esc(q.q)} ${k.band==="sprout"?`<button class="speak" data-say="${esc(q.q)}" aria-label="Read the question aloud">🔊</button>`:""}</p>
     <div class="opts ${k.band==="sprout"?"big":""}">${q.opts.map((o,i)=>`<button class="opt ${ans?(i===q.a?"right":i===QZ.picked?"wrong":""):""}" data-ans="${i}" ${ans?"disabled":""}>${esc(o)}</button>`).join("")}</div>
-    ${ans?`<div class="why ${QZ.picked===q.a?"ok":""}"><b>${QZ.picked===q.a?"Yes! 🎉":"Good try!"}</b> ${esc(q.why)}</div>
-      <button class="qbtn" style="width:100%;margin-top:10px" data-next>${QZ.i<2?"Next question":"See my Stars"}</button>`:""}
+    ${ans?`<div class="why ${QZ.picked===q.a?"good":""}"><b>${QZ.picked===q.a?"Yes! 🎉":"Good try!"}</b> ${esc(q.why)}</div>
+      <button class="qbtn" style="width:100%;margin-top:10px" data-next>${QZ.i<qs.length-1?"Next question":"See my Stars"}</button>`:""}
     <button class="reset" style="margin-top:6px" data-qquit>Finish later</button></div>`;
 }
 function bindDaily(k){
   const d=dstate(k);
   const t=document.querySelector("[data-dtry]");if(t)t.onclick=()=>{d.tried=true;const p=award(k,{s:15,p:"move"});burst(t);toast(`+${p} Stars for trying ${SPORTS[todaysSport(k)].n}!`);save();render()};
-  document.querySelectorAll("[data-quiz]").forEach(b=>b.onclick=()=>{QZ={kid:k.id,kind:b.dataset.quiz,i:0,score:0,picked:null};render()});
-  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const q=todaysQs(QZ.kind,k.band)[QZ.i];QZ.picked=+b.dataset.ans;if(QZ.picked===q.a){QZ.score++;burst(b);if(k.band==="sprout")say("Yes! "+q.why)}render()});
-  const n=document.querySelector("[data-next]");if(n)n.onclick=()=>{if(QZ.i<2){QZ.i++;QZ.picked=null;render();return}
-    const sc=QZ.score,pts=sc*5+(sc===3?5:0);d[QZ.kind]=sc;let got=0;if(pts)got=award(k,{s:pts,p:DQ[QZ.kind].p});QZ=null;toast(sc===3?`Perfect! +${got} Stars`:`${sc} of 3 right · +${got} Stars`);save();render()};
+  document.querySelectorAll("[data-quiz]").forEach(b=>b.onclick=()=>{const kd=b.dataset.quiz;QZ={kid:k.id,kind:kd,where:"daily",title:DQ[kd].n,icon:DQ[kd].i,qs:kd==="learn"?mixQs(k):todaysQs("food",k.band),i:0,score:0,picked:null};render()});
+  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const q=QZ.qs[QZ.i];QZ.picked=+b.dataset.ans;if(QZ.picked===q.a){QZ.score++;burst(b);if(k.band==="sprout")say("Yes! "+q.why)}render()});
+  const n=document.querySelector("[data-next]");if(n)n.onclick=()=>{if(QZ.i<QZ.qs.length-1){QZ.i++;QZ.picked=null;render();return}
+    const n=QZ.qs.length,sc=QZ.score,pts=sc*5+(sc===n?5:0);let pil="learn";
+    if(QZ.where==="daily"){d[QZ.kind]=sc;pil=DQ[QZ.kind].p}else{S.edu=S.edu||{};S.edu[k.id]=S.edu[k.id]||{};S.edu[k.id][QZ.kind]=Math.max(sc,S.edu[k.id][QZ.kind]||0)}
+    let got=0;if(pts)got=award(k,{s:pts,p:pil});QZ=null;
+    if(sc===n)party("🏆","Perfect score!",`+${got} Stars`);else toast(`${sc} of ${n} right · +${got} Stars`);save();render()};
   const qq=document.querySelector("[data-qquit]");if(qq)qq.onclick=()=>{QZ=null;render()};
 }
 
+/* ---------- LEARN: grade-based quizzes (US curriculum-style) + homework ---------- */
+const GRADE_NAMES={"-1":"Pre-K","0":"Kindergarten","1":"1st grade","2":"2nd grade","3":"3rd grade","4":"4th grade","5":"5th grade","6":"6th grade","7":"7th grade","8":"8th grade","9":"9th grade"};
+const gradeOf=k=>k.grade!==undefined?k.grade:Math.max(-1,Math.min(9,k.age-5));
+const lvl=g=>g<=0?0:g<=2?1:g<=5?2:3;
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function mkQ(q,right,wrongs,why){const w=[...new Set(wrongs.map(String))].filter(x=>x!==String(right)).slice(0,3);const opts=shuffle([String(right),...w]);return {q,opts,a:opts.indexOf(String(right)),why}}
+const near=(n,spread=3)=>{const s=new Set();for(let t=0;s.size<3&&t<60;t++){const d=ri(-spread,spread);if(d&&n+d>0)s.add(n+d)}return [...s]};
+
+// MATH: generated fresh every time, following Common Core grade topics
+function genMath(g){
+  const t=ri(0,2);
+  if(g<=0){
+    if(t===0){const n=ri(2,8),e=["🍎","⭐","🐟","🎈"][ri(0,3)];return mkQ(`How many? ${e.repeat(n)}`,n,near(n,2),`Count them one by one: there are ${n}.`)}
+    if(t===1){const a=ri(1,9),b=ri(1,9);if(a===b)return genMath(g);return mkQ(`Which number is bigger: ${a} or ${b}?`,Math.max(a,b),[Math.min(a,b)],`${Math.max(a,b)} comes later when you count, so it is bigger.`)}
+    const a=ri(1,4),b=ri(1,4);return mkQ(`${a} + ${b} = ?`,a+b,near(a+b,2),`Hold up ${a} fingers, then ${b} more. That makes ${a+b}.`)}
+  if(g===1){const a=ri(3,12),b=ri(1,8);return t?mkQ(`${a+b} − ${b} = ?`,a,near(a),`Count back ${b} from ${a+b} and you land on ${a}.`):mkQ(`${a} + ${b} = ?`,a+b,near(a+b),`${a} and ${b} more makes ${a+b}.`)}
+  if(g===2){
+    if(t===2){const s=[2,5,10][ri(0,2)],st=s*ri(1,5);return mkQ(`Skip count by ${s}s: ${st}, ${st+s}, ${st+2*s}, ___`,st+3*s,[st+3*s+1,st+2*s+1,st+4*s],`Add ${s} each time: ${st+2*s} + ${s} = ${st+3*s}.`)}
+    const a=ri(15,60),b=ri(11,39);return t?mkQ(`${a+b} − ${b} = ?`,a,near(a,10),`${a+b} − ${b} = ${a}. Subtract the tens, then the ones.`):mkQ(`${a} + ${b} = ?`,a+b,[a+b+10,a+b-10,a+b+1],`Add tens: ${Math.floor(a/10)*10+Math.floor(b/10)*10}. Then add ones to get ${a+b}.`)}
+  if(g===3){const a=ri(2,10),b=ri(2,10);
+    if(t===2)return mkQ(`${a*b} ÷ ${a} = ?`,b,near(b,2),`Division undoes multiplication: ${a} × ${b} = ${a*b}, so ${a*b} ÷ ${a} = ${b}.`);
+    if(t===1){const n=ri(2,9);return mkQ(`A pizza is cut into ${n} equal slices. What fraction is 1 slice?`,`1/${n}`,[`1/${n+1}`,`${n}/1`,`1/${Math.max(2,n-1)}`],`One slice out of ${n} equal parts is 1/${n}.`)}
+    return mkQ(`${a} × ${b} = ?`,a*b,[a*b+a,a*b-b,a*b+1],`${a} groups of ${b} make ${a*b}.`)}
+  if(g===4){
+    if(t===0){const a=ri(12,49),b=ri(3,9);return mkQ(`${a} × ${b} = ?`,a*b,[a*b+b,a*b-10,a*b+10],`${Math.floor(a/10)*10} × ${b} = ${Math.floor(a/10)*10*b}, and ${a%10} × ${b} = ${(a%10)*b}. Add them: ${a*b}.`)}
+    if(t===1){const d=[2,3,4,5][ri(0,3)],m=ri(2,4);return mkQ(`Which fraction is equal to 1/${d}?`,`${m}/${d*m}`,[`${m}/${d*m+1}`,`${m+1}/${d*m}`,`${d}/${m}`],`Multiply top and bottom by ${m}: 1/${d} = ${m}/${d*m}.`)}
+    const n=ri(1,9)*100+ri(10,99);const r=Math.round(n/100)*100;return mkQ(`Round ${n} to the nearest hundred.`,r,[r+100,r-100,Math.floor(n/10)*10],`Look at the tens digit. ${n} rounds to ${r}.`)}
+  if(g===5){
+    if(t===0){const a=ri(11,89)/10,b=ri(11,59)/10,s=(a*10+b*10)/10;return mkQ(`${a.toFixed(1)} + ${b.toFixed(1)} = ?`,s.toFixed(1),[(s+1).toFixed(1),(s-0.1).toFixed(1),(s+0.1).toFixed(1)],`Line up the decimal points and add: ${s.toFixed(1)}.`)}
+    if(t===1){const d=[2,3,4,5][ri(0,3)],n=d*ri(3,9);return mkQ(`What is 1/${d} of ${n}?`,n/d,[n/d+1,n/d-1,n*d],`Split ${n} into ${d} equal parts: ${n} ÷ ${d} = ${n/d}.`)}
+    const l=ri(2,6),w=ri(2,5),h=ri(2,4);return mkQ(`A box is ${l} cm long, ${w} cm wide and ${h} cm tall. What is its volume?`,`${l*w*h} cm³`,[`${l+w+h} cm³`,`${l*w} cm³`,`${l*w*h+h} cm³`],`Volume = length × width × height = ${l} × ${w} × ${h} = ${l*w*h} cm³.`)}
+  if(g===6){
+    if(t===0){const p=[10,20,25,50][ri(0,3)],n=ri(2,12)*20;return mkQ(`What is ${p}% of ${n}?`,n*p/100,[n*p/100+5,n*p/100*2,n*p/10],`${p}% means ${p} out of 100: ${n} × ${p/100} = ${n*p/100}.`)}
+    if(t===1){const a=ri(2,6),b=ri(2,6),m=ri(2,5);return mkQ(`The ratio of cats to dogs is ${a}:${b}. If there are ${a*m} cats, how many dogs?`,b*m,[b*m+1,a*m,b+m],`Scale the ratio by ${m}: ${a}×${m} = ${a*m} cats, so ${b}×${m} = ${b*m} dogs.`)}
+    const a=ri(2,9),b=ri(a+1,15);return mkQ(`${a} − ${b} = ?`,a-b,[b-a,a-b-1,a-b+1],`Starting at ${a} and going down ${b} takes you below zero, to ${a-b}.`)}
+  if(g===7){
+    if(t===0){const x=ri(2,9),a=ri(2,6),b=ri(1,12);return mkQ(`Solve: ${a}x + ${b} = ${a*x+b}`,`x = ${x}`,[`x = ${x+1}`,`x = ${x-1}`,`x = ${a*x}`],`Subtract ${b}: ${a}x = ${a*x}. Divide by ${a}: x = ${x}.`)}
+    if(t===1){const a=-ri(2,9),b=ri(2,9);return mkQ(`(${a}) × ${b} = ?`,a*b,[-a*b,a*b+1,a+b],`A negative times a positive is negative: ${a*b}.`)}
+    const p=ri(2,5),q=ri(3,9),m=ri(2,4);return mkQ(`If ${p} notebooks cost $${p*q}, how much do ${p*m} notebooks cost?`,`$${p*q*m}`,[`$${p*q*m+q}`,`$${p*q+m}`,`$${q*m}`],`Each costs $${q}, so ${p*m} cost $${p*q*m}.`)}
+  // grade 8+
+  if(t===0){const n=ri(4,15);return mkQ(`What is √${n*n}?`,n,near(n,2),`${n} × ${n} = ${n*n}, so the square root is ${n}.`)}
+  if(t===1){const tr=[[3,4,5],[6,8,10],[5,12,13],[8,15,17]][ri(0,3)];return mkQ(`A right triangle has legs ${tr[0]} and ${tr[1]}. How long is the hypotenuse?`,tr[2],[tr[0]+tr[1],tr[2]+1,tr[2]-1],`Pythagorean theorem: ${tr[0]}² + ${tr[1]}² = ${tr[0]**2+tr[1]**2} = ${tr[2]}².`)}
+  const m=ri(2,5),b=ri(-5,5);return mkQ(`What is the slope of y = ${m}x ${b<0?"− "+(-b):"+ "+b}?`,m,[b,m+1,-m],`In y = mx + b, the slope is m, so it is ${m}.`);
+}
+
+// SCIENCE: by grade band (NGSS-style topics)
+const SCI=[
+ [["What do plants need to grow?","Water and sunlight",["Candy","Toys"],"Plants drink water and use sunlight to make their food."],
+  ["Which animal lives in water?","Fish",["Dog","Bird"],"Fish breathe underwater with gills."],
+  ["Which season is the coldest?","Winter",["Summer","Spring"],"Winter is the coldest season of the year."],
+  ["What do you use to smell?","Your nose",["Your ears","Your elbow"],"Your nose is how you smell flowers and food."],
+  ["What gives us light during the day?","The Sun",["The Moon","A lamp"],"The Sun lights up the sky in the daytime."],
+  ["Ice is water that is…","Frozen",["Hot","Bubbly"],"When water gets very cold, it freezes into ice."]],
+ [["What does a caterpillar turn into?","A butterfly",["A spider","A bird"],"A caterpillar makes a chrysalis and comes out as a butterfly."],
+  ["How many legs does an insect have?","6",["4","8"],"All insects have 6 legs. Spiders have 8, so they are not insects."],
+  ["Which of these is a liquid?","Juice",["Rock","Wood"],"Liquids flow and take the shape of their container."],
+  ["An animal that eats only plants is called a…","Herbivore",["Carnivore","Omnivore"],"Herbivores, like cows and rabbits, eat only plants."],
+  ["What do magnets pull on?","Iron and steel",["Paper","Plastic"],"Magnets attract metals like iron and steel."],
+  ["The Earth moves around the…","Sun",["Moon","Mars"],"Earth travels around the Sun once a year."]],
+ [["What are the three common states of matter?","Solid, liquid, gas",["Hot, cold, warm","Rock, water, air"],"Matter can be a solid, a liquid or a gas."],
+  ["What force pulls things down toward Earth?","Gravity",["Magnetism","Friction"],"Gravity pulls everything toward Earth. That's why a ball falls."],
+  ["Which part of a plant makes its food?","The leaves",["The roots","The flowers"],"Leaves use sunlight to make food. This is photosynthesis."],
+  ["Which is the largest planet?","Jupiter",["Earth","Saturn"],"Jupiter is so big that more than 1,000 Earths could fit inside."],
+  ["Water vapor turning back into liquid is called…","Condensation",["Evaporation","Melting"],"Condensation is how clouds and dew form."],
+  ["Which organ pumps blood through your body?","The heart",["The lungs","The stomach"],"Your heart beats about 100,000 times a day."],
+  ["A food chain always starts with…","Plants (producers)",["Lions","Mushrooms"],"Plants make their own food from sunlight, so every food chain starts with them."],
+  ["About how long does Earth take to go around the Sun?","365 days",["24 hours","30 days"],"One trip around the Sun is one year, about 365 days."]],
+ [["What is the basic unit of all living things?","The cell",["The atom","The organ"],"Every living thing is made of one or more cells."],
+  ["H₂O is the chemical formula for…","Water",["Salt","Oxygen"],"Two hydrogen atoms and one oxygen atom make water."],
+  ["Which layer of Earth do we live on?","The crust",["The mantle","The core"],"The crust is Earth's thin, rocky outer layer."],
+  ["Photosynthesis makes sugar and gives off…","Oxygen",["Carbon dioxide","Nitrogen"],"Plants release the oxygen we breathe."],
+  ["Newton's first law is about…","Inertia",["Gravity on the Moon","Electricity"],"An object keeps doing what it's doing unless a force acts on it."],
+  ["What is the pH of pure water?","7",["1","14"],"Pure water is neutral, with a pH of 7."],
+  ["Where is DNA mainly found in a cell?","The nucleus",["The cell wall","The membrane"],"The nucleus is the cell's control center and holds its DNA."],
+  ["Speed equals distance divided by…","Time",["Mass","Height"],"Speed = distance ÷ time, like miles per hour."]]
+];
+// USA: civics, history and geography by grade band
+const USA=[
+ [["What colors are on the American flag?","Red, white and blue",["Green and yellow","Pink and purple"],"The US flag is red, white and blue."],
+  ["What holiday is on the Fourth of July?","Independence Day",["Thanksgiving","Halloween"],"July 4th is America's birthday."],
+  ["Who lives in the White House?","The President",["The Mayor","Santa"],"The President of the United States lives and works in the White House."],
+  ["Which bird is a symbol of the USA?","The bald eagle",["The penguin","The parrot"],"The bald eagle is the national bird."],
+  ["The Statue of Liberty stands in which city?","New York City",["Los Angeles","Chicago"],"Lady Liberty stands in New York Harbor."]],
+ [["How many stars are on the US flag?","50",["13","25"],"There is one star for each of the 50 states."],
+  ["How many stripes are on the US flag?","13",["50","10"],"The 13 stripes stand for the first 13 colonies."],
+  ["Who was the first President?","George Washington",["Abraham Lincoln","Barack Obama"],"George Washington became the first President in 1789."],
+  ["What holiday celebrates a harvest feast in November?","Thanksgiving",["Memorial Day","Labor Day"],"Thanksgiving is on the fourth Thursday of November."],
+  ["Which ocean is on the east coast of the USA?","Atlantic",["Pacific","Indian"],"The Atlantic is on the east. The Pacific is on the west."]],
+ [["How many states are in the USA?","50",["48","52"],"Hawaii became the 50th state in 1959."],
+  ["What is the capital of the United States?","Washington, D.C.",["New York City","Philadelphia"],"Washington, D.C. is home to the White House and Congress."],
+  ["Which document begins with “We the People”?","The Constitution",["The Declaration of Independence","The Bill of Rights"],"The Constitution sets up how the US government works."],
+  ["What is the largest state by area?","Alaska",["Texas","California"],"Alaska is more than twice the size of Texas."],
+  ["How many branches does the US government have?","3",["2","5"],"Legislative (Congress), executive (President) and judicial (courts)."],
+  ["What is the highest mountain in North America?","Denali",["Mount Rushmore","Pikes Peak"],"Denali in Alaska is about 20,310 feet tall."]],
+ [["In what year was the Declaration of Independence adopted?","1776",["1789","1812"],"It was adopted on July 4, 1776."],
+  ["What are the first ten amendments to the Constitution called?","The Bill of Rights",["The Preamble","The Articles"],"The Bill of Rights protects freedoms like speech and religion."],
+  ["Who wrote most of the Declaration of Independence?","Thomas Jefferson",["Benjamin Franklin","John Adams"],"Thomas Jefferson wrote the first draft."],
+  ["How many senators does each state have?","2",["1","It depends on population"],"Every state has 2 senators. House seats depend on population."],
+  ["Which amendment gave women the right to vote?","The 19th",["The 1st","The 13th"],"The 19th Amendment was ratified in 1920."],
+  ["Which President issued the Emancipation Proclamation?","Abraham Lincoln",["George Washington","Theodore Roosevelt"],"Lincoln issued it in 1863, during the Civil War."],
+  ["How many justices sit on the Supreme Court?","9",["7","12"],"The Supreme Court has 9 justices."]]
+];
+const STATES={"Alabama":["Montgomery","South"],"Alaska":["Juneau","West"],"Arizona":["Phoenix","West"],"Arkansas":["Little Rock","South"],"California":["Sacramento","West"],"Colorado":["Denver","West"],"Connecticut":["Hartford","Northeast"],"Delaware":["Dover","South"],"Florida":["Tallahassee","South"],"Georgia":["Atlanta","South"],"Hawaii":["Honolulu","West"],"Idaho":["Boise","West"],"Illinois":["Springfield","Midwest"],"Indiana":["Indianapolis","Midwest"],"Iowa":["Des Moines","Midwest"],"Kansas":["Topeka","Midwest"],"Kentucky":["Frankfort","South"],"Louisiana":["Baton Rouge","South"],"Maine":["Augusta","Northeast"],"Maryland":["Annapolis","South"],"Massachusetts":["Boston","Northeast"],"Michigan":["Lansing","Midwest"],"Minnesota":["Saint Paul","Midwest"],"Mississippi":["Jackson","South"],"Missouri":["Jefferson City","Midwest"],"Montana":["Helena","West"],"Nebraska":["Lincoln","Midwest"],"Nevada":["Carson City","West"],"New Hampshire":["Concord","Northeast"],"New Jersey":["Trenton","Northeast"],"New Mexico":["Santa Fe","West"],"New York":["Albany","Northeast"],"North Carolina":["Raleigh","South"],"North Dakota":["Bismarck","Midwest"],"Ohio":["Columbus","Midwest"],"Oklahoma":["Oklahoma City","South"],"Oregon":["Salem","West"],"Pennsylvania":["Harrisburg","Northeast"],"Rhode Island":["Providence","Northeast"],"South Carolina":["Columbia","South"],"South Dakota":["Pierre","Midwest"],"Tennessee":["Nashville","South"],"Texas":["Austin","South"],"Utah":["Salt Lake City","West"],"Vermont":["Montpelier","Northeast"],"Virginia":["Richmond","South"],"Washington":["Olympia","West"],"West Virginia":["Charleston","South"],"Wisconsin":["Madison","Midwest"],"Wyoming":["Cheyenne","West"]};
+const ST_NAMES=Object.keys(STATES);
+function genState(g){
+  const home=S.settings.state||"New York";const t=ri(0,g>=3?2:1);
+  const others=n=>shuffle(ST_NAMES.filter(s=>s!==home)).slice(0,n);
+  if(t===0)return mkQ(`What is the capital of ${home}, your state?`,STATES[home][0],others(3).map(s=>STATES[s][0]),`${STATES[home][0]} is the capital of ${home}.`);
+  if(t===1){const s=others(1)[0];return mkQ(`What is the capital of ${s}?`,STATES[s][0],others(4).filter(x=>x!==s).slice(0,3).map(x=>STATES[x][0]),`${STATES[s][0]} is the capital of ${s}.`)}
+  const s=Math.random()<.5?home:others(1)[0];return mkQ(`${s} is in which region of the USA?`,STATES[s][1],["Northeast","Midwest","South","West"].filter(r=>r!==STATES[s][1]),`${s} is in the ${STATES[s][1]} region.`);
+}
+function uniq(fn,n){const out=[],seen=new Set();for(let t=0;out.length<n&&t<n*20;t++){const q=fn();if(!seen.has(q.q)){seen.add(q.q);out.push(q)}}return out}
+const fromBank=(bank,g,n)=>shuffle(bank[lvl(g)]).slice(0,n).map(([q,r,w,why])=>mkQ(q,r,w,why));
+const SUBJ={
+  math:{n:"Math",i:"🔢",c:"#3A8FD9",gen:(g,n)=>uniq(()=>genMath(g),n)},
+  sci:{n:"Science",i:"🔬",c:"#2F9E5B",gen:(g,n)=>fromBank(SCI,g,n)},
+  usa:{n:"USA",i:"🇺🇸",c:"#E2576B",gen:(g,n)=>fromBank(USA,g,n)},
+  state:{n:"My state",i:"🗺️",c:"#7E5BD6",min:1,gen:(g,n)=>uniq(()=>genState(g),n)}};
+const subjFor=k=>Object.keys(SUBJ).filter(s=>!SUBJ[s].min||gradeOf(k)>=SUBJ[s].min);
+function mixQs(k){const g=gradeOf(k);return [genMath(g),...fromBank(SCI,g,1),...(gradeOf(k)>=1&&Math.random()<.5?[genState(g)]:fromBank(USA,g,1))]}
+
+function viewLearn(k){
+  const g=gradeOf(k);S.edu=S.edu||{};const ed=S.edu[k.id]||{};
+  if(QZ&&QZ.kid===k.id&&QZ.where==="learn")return quizPanel(k);
+  const hw=(S.homework||[]).filter(h=>h.kid===k.id&&h.state!=="done-old");
+  return `<div class="hero" style="--kc:${KC[k.id]||"var(--leaf)"}"><div class="hero-txt"><span class="eyebrow">${GRADE_NAMES[g]} · ${esc(S.settings.state)}</span><h2>Learn and earn!</h2><p>Every right answer = 5 ⭐. Get them all right for a bonus!</p></div><span class="hero-art" aria-hidden="true">🧠</span></div>
+  <div class="subjects">${subjFor(k).map(s=>{const sj=SUBJ[s];return `<button class="subj" style="--sc:${sj.c}" data-subj="${s}"><span class="si" aria-hidden="true">${sj.i}</span><b>${sj.n}</b><small>${ed[s]!==undefined?`Best: ${ed[s]}/5`:"5 questions"}</small></button>`}).join("")}</div>
+  <p class="demo" style="margin-top:-4px">Math questions are made fresh every time for ${GRADE_NAMES[g]}. A parent can change the grade or state in Settings.</p>
+  ${k.band==="sprout"?"":`<div class="card hwcard"><div class="section-title"><h3>📒 My homework</h3><span>+20 ⭐ each</span></div>
+    <div class="list" style="margin-top:8px">${hw.length?hw.map(h=>`<div class="hw ${h.state}"><span class="hwi" aria-hidden="true">${HW_SUBJ[h.subj]||"📄"}</span><div class="grow"><b>${esc(h.t)}</b><small>${esc(h.subj)}${h.state==="pending"?" · Waiting for a parent":h.state==="done"?" · Stars earned!":""}</small></div>
+      ${h.state==="todo"?`<button class="qbtn" data-hwdone="${h.id}">Finished</button>`:h.state==="pending"?`<span class="tag">⏳</span>`:`<span class="tag st-approved">✓</span>`}</div>`).join(""):`<p class="empty">No homework yet. Add what your teacher gave you today.</p>`}</div>
+    <form class="addform" id="hwadd" style="margin-top:10px"><select id="hwsubj" aria-label="Subject">${Object.keys(HW_SUBJ).map(s=>`<option>${s}</option>`).join("")}</select><input id="hwtext" placeholder="e.g. Math worksheet page 42" maxlength="60" required><button class="ok" type="submit">Add</button></form></div>`}`;
+}
+const HW_SUBJ={"Math":"🔢","Reading":"📖","Writing":"✏️","Science":"🔬","Social studies":"🌎","Spelling":"🔤","Other":"📄"};
+function bindLearn(k){
+  document.querySelectorAll("[data-subj]").forEach(b=>b.onclick=()=>{const s=b.dataset.subj;QZ={kid:k.id,kind:s,where:"learn",title:SUBJ[s].n+" quiz",icon:SUBJ[s].i,qs:SUBJ[s].gen(gradeOf(k),5),i:0,score:0,picked:null};render();window.scrollTo(0,0)});
+  const f=$("#hwadd");if(f)f.onsubmit=e=>{e.preventDefault();const t=$("#hwtext").value.trim();if(!t)return;S.homework=S.homework||[];S.homework.push({id:"h"+Date.now(),kid:k.id,subj:$("#hwsubj").value,t,state:"todo"});toast("Homework added");save();render()};
+  document.querySelectorAll("[data-hwdone]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwdone);
+    if(proofOn()){openProof(k,{icon:HW_SUBJ[h.subj],t:h.t,hw:h});return}
+    h.state="pending";burst(b);toast("Sent to a parent for Stars!");save();render()});
+}
+
+const KC={mia:"#F2A20C",leo:"#F07A2E",ava:"#8A63E0"};
 /* ---------- KID VIEWS ---------- */
 function header(k){
   const b=BANDS[k.band];
   const doneToday=Object.values(S.today[k.id]||{}).filter(v=>v==="done").length;
-  return `<div class="hello"><div class="chip" style="padding:0;border:0;background:none"><span class="av" style="width:52px;height:52px;font-size:30px">${k.av}</span></div>
-    <div><h2>Hi ${k.name}!</h2><p>${b.name} · ${doneToday} done today${mult(k)>1?` · ${mult(k)}x streak bonus`:""}</p></div></div>
+  const lv=Math.floor(k.lifetime/100)+1,xp=k.lifetime%100;
+  return `<div class="hero" style="--kc:${KC[k.id]||"var(--leaf)"}"><span class="hero-av" aria-hidden="true">${k.av}</span>
+    <div class="hero-txt"><span class="eyebrow">Level ${lv} ${b.name.replace(/s$/,"")}</span><h2>Hi ${k.name}!</h2>
+    <p>${doneToday} done today${mult(k)>1?` · ${mult(k)}x streak bonus 🔥`:""}</p>
+    <div class="xp" aria-label="${xp} of 100 Stars to level ${lv+1}"><i style="width:${xp}%"></i></div><small class="xpl">${100-xp} ⭐ to Level ${lv+1}</small></div></div>
   <div class="stats"><div class="stat stars"><b>${k.stars}</b><span>Stars</span></div><div class="stat streak"><b>${k.streak}🔥</b><span>Day streak</span></div><div class="stat goal"><b>${Math.round(S.goal.have/S.goal.target*100)}%</b><span>Family goal</span></div></div>`;
 }
+const TIPS=["Drinking water helps your brain think clearly.","Kids need about 60 minutes of play every day!","Trying a food 10 times can make you like it.","Reading before bed helps you sleep better.","Saying thank you makes two people happy.","Your muscles grow while you sleep. Rest is part of training!","Mistakes help your brain grow. Keep trying!"];
+function tipBubble(k){return `<div class="tip"><span class="tip-m" aria-hidden="true">🌱</span><p><b>Sunny says:</b> ${TIPS[dayNo()%TIPS.length]}</p></div>`}
+function party(icon,title,sub){const p=$("#party");p.querySelector(".pi").textContent=icon;p.querySelector("b").textContent=title;p.querySelector("small").textContent=sub;p.hidden=false;
+  for(let i=0;i<3;i++)setTimeout(()=>burst(p.querySelector(".pi")),i*250);clearTimeout(party._t);party._t=setTimeout(()=>p.hidden=true,2400)}
 function stateLabel(k,st){
   if(st==="done")return "✓ Done";
   if(st==="pending")return "Waiting";
@@ -519,7 +713,7 @@ function viewToday(k){
   if(k.band==="sprout"){
     const grown=Object.values(st).filter(v=>v==="done").length;
     const sprout=["🌰","🌱","🌿","🪴","🌳","🌳"][Math.min(grown,5)];
-    return header(k)+daily(k)+`
+    return header(k)+tipBubble(k)+daily(k)+`
     <div class="card pet"><div class="sprout" id="sprout" aria-hidden="true">${sprout}</div>
       <div class="grow" style="flex:1"><b style="font-family:var(--display);font-size:18px">Sunny the sprout</b>
       <p class="note">Sunny grows each time ${k.name} does a healthy thing. Ask a grown-up to tap “Done!” with you.</p>
@@ -534,7 +728,7 @@ function viewToday(k){
   }
   const list=acts(k).filter(a=>S.filter==="all"||a.p===S.filter);
   const total=acts(k).length,done=Object.values(st).filter(v=>v==="done").length;
-  return header(k)+daily(k)+`
+  return header(k)+tipBubble(k)+daily(k)+`
   <div class="card"><div class="section-title"><h3>Today’s quests</h3><span>${done} of ${total}</span></div>
     <div class="bar" style="margin-top:10px"><i style="width:${done/total*100}%"></i></div>
     ${k.band==="trail"?`<p class="note" style="margin-top:10px">You log your own quests. Parents can spot-check.</p>`:`<p class="note" style="margin-top:10px">Tap Done and a parent will give you your Stars.</p>`}</div>
@@ -579,6 +773,7 @@ function viewMe(k){
     <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>`;
 }
 function bindKid(k){
+  bindLearn(k);
   bindDaily(k);
   document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{const id=b.dataset.sport;k.sports=k.sports.includes(id)?k.sports.filter(x=>x!==id):[...k.sports,id];save();render()});
   document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;save();render()});
@@ -600,11 +795,15 @@ function bindKid(k){
 function viewApprove(){
   const items=[];for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")items.push([id,a]);
   const reqs=S.requests.filter(r=>r.state==="asked");
-  return `<div><h2 style="font-size:24px">Good evening</h2><p class="note">Confirm what your kids did today. Stars go to them right away.</p></div>
+  return `<div><h2 style="font-size:24px">${["Good morning","Good afternoon","Good evening"][new Date().getHours()<12?0:new Date().getHours()<17?1:2]}</h2><p class="note">Confirm what your kids did today. Stars go to them right away.</p></div>
   <div class="card"><div class="section-title"><h3>Activities</h3><span>${items.length} waiting</span></div>
     <div class="list">${items.length?items.map(([id,aid])=>{const k=kid(id),a=actById(aid);return `<div class="appr"><div class="ic p-${a.p}" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;flex:none" aria-hidden="true">${a.icon}</div>
       <div class="grow"><div class="who">${k.av} ${k.name}</div><b style="font-size:15px">${esc(a.t)}</b></div>
       <button class="no" data-deny="${id}|${aid}">Not yet</button><button class="ok" data-approve="${id}|${aid}">+${Math.round(a.s*mult(k))} ⭐</button></div>${proofView(id,aid)}`}).join(""):`<p class="empty">All caught up. Switch to Mia or Leo and tap Done on a quest to see it here.</p>`}</div></div>
+  ${(()=>{const hws=(S.homework||[]).filter(h=>h.state==="pending");return `<div class="card"><div class="section-title"><h3>Homework</h3><span>${hws.length} waiting</span></div>
+    <div class="list">${hws.length?hws.map(h=>{const k=kid(h.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${HW_SUBJ[h.subj]||"📄"}</span>
+      <div class="grow"><div class="who">${k.av} ${k.name} · ${esc(h.subj)}</div><b style="font-size:15px">${esc(h.t)}</b></div>
+      <button class="no" data-hwno="${h.id}">Not yet</button><button class="ok" data-hwok="${h.id}">+${Math.round(20*mult(k))} ⭐</button></div>${proofView(h.kid,"hw"+h.id)}`}).join(""):`<p class="empty">No homework waiting.</p>`}</div></div>`})()}
   <div class="card"><div class="section-title"><h3>Reward requests</h3><span>${reqs.length} waiting</span></div>
     <div class="list">${reqs.length?reqs.map(q=>{const k=kid(q.kid),r=rewardById(q.reward);return `<div class="appr"><span style="font-size:28px" aria-hidden="true">${r.icon}</span>
       <div class="grow"><div class="who">${k.av} ${k.name} · has ${k.stars} ⭐</div><b style="font-size:15px">${esc(r.t)}</b></div>
@@ -627,6 +826,9 @@ function viewVideos(){
 }
 function viewSettings(){
   return `<div><h2 style="font-size:24px">Settings</h2><p class="note">Only parents can see and change these.</p></div>
+  <div class="card"><h3 style="font-size:18px">🏫 School</h3><p class="note" style="margin-top:6px">Quizzes follow each child's grade, using common US school topics.</p>
+    <div class="list" style="margin-top:10px">${S.kids.map(k=>`<label class="setrow"><span>${k.av} ${k.name}</span><select data-grade="${k.id}">${Object.entries(GRADE_NAMES).map(([g,n])=>`<option value="${g}" ${+g===gradeOf(k)?"selected":""}>${n}</option>`).join("")}</select></label>`).join("")}
+      <label class="setrow"><span>🗺️ Our state</span><select id="setstate">${ST_NAMES.map(n=>`<option ${n===S.settings.state?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
   <div class="card"><div class="section-title"><h3>🎥 Video proof</h3><span class="tag ${S.settings.proof?"st-approved":""}">${S.settings.proof?"On":"Off"}</span></div>
     <p class="note" style="margin-top:6px">When on, kids 6 and up can record a video (any length) or take a photo of an activity and send it to you. Clips stay on this family’s devices and only parents can see them. You choose which options your kids see.</p>
     <div class="list" style="margin-top:10px">
@@ -660,6 +862,10 @@ function viewFamily(){
 function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
+  document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);toast(`${k.name} got ${p} Stars for homework`);save();render()});
+  document.querySelectorAll("[data-hwno]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwno);dropProof(h.kid,"hw"+h.id);h.state="todo";toast("Sent back to the homework list");save();render()});
+  document.querySelectorAll("[data-grade]").forEach(sel=>sel.onchange=()=>{kid(sel.dataset.grade).grade=+sel.value;toast("Grade updated. Quizzes will match it.");save()});
+  const ss=$("#setstate");if(ss)ss.onchange=()=>{S.settings.state=ss.value;toast("State set to "+ss.value);save()};
   const sp=$("#setproof");if(sp)sp.onchange=()=>{S.settings.proof=sp.checked;if(!sp.checked)Object.keys(PROOFS).forEach(k=>{const [a,b]=k.split("|");dropProof(a,b)});toast(sp.checked?"Video proof turned on":"Video proof off. Saved clips deleted.");save();render()};
   document.querySelectorAll("[data-opt]").forEach(c=>c.onchange=()=>{S.settings.opts[c.dataset.opt]=c.checked;save();render()});
   const sd=$("#setdel");if(sd)sd.onchange=()=>{S.settings.autoDelete=sd.checked;save()};
@@ -702,7 +908,7 @@ function dropProof(id,aid){const k=id+"|"+aid,p=PROOFS[k];if(p&&p.url)URL.revoke
 let PCTX=null;
 function openProof(k,a){PCTX={k,a};const o=S.settings.opts;$("#optv").hidden=!o.video;$("#opti").hidden=!o.photo;$("#psaw").hidden=!o.saw;$("#prtitle").textContent=a.icon+" "+a.t;$("#proof").hidden=false}
 function closeProof(){$("#proof").hidden=true;PCTX=null;$("#pvid").value="";$("#pimg").value=""}
-function sendProof(type,url){const {k,a}=PCTX;S.today[k.id][a.id]="pending";PROOFS[k.id+"|"+a.id]={type,url};closeProof();
+function sendProof(type,url){const {k,a}=PCTX;if(a.hw){a.hw.state="pending";PROOFS[k.id+"|hw"+a.hw.id]={type,url}}else{S.today[k.id][a.id]="pending";PROOFS[k.id+"|"+a.id]={type,url}}closeProof();
   toast(type==="saw"?"Sent to your parent for Stars!":(type==="video"?"Video":"Photo")+" sent to your parent. Only they can see it.");save();render()}
 $("#pvid").onchange=e=>{const f=e.target.files[0];if(f)sendProof("video",URL.createObjectURL(f))};
 $("#pimg").onchange=e=>{const f=e.target.files[0];if(f)sendProof("photo",URL.createObjectURL(f))};
