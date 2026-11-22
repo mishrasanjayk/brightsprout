@@ -363,7 +363,7 @@ S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
 S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}nativeSync()}
 const $=s=>document.querySelector(s);
 const kid=id=>S.kids.find(k=>k.id===id);
 const acts=k=>ACTIVITIES[k.band];
@@ -481,7 +481,8 @@ function render(){
   const P=$("#profiles");
   P.innerHTML=S.kids.map(k=>`<button class="chip" aria-pressed="${S.who===k.id}" data-who="${k.id}"><span class="av">${k.av}</span>${k.name}<span class="age">${k.age}</span></button>`).join("")+
     `<button class="chip" aria-pressed="${S.who==="parent"}" data-who="parent"><span class="av">👪</span>Parent</button>`;
-  P.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{S.who=b.dataset.who;S.tab=S.who==="parent"?"approve":"today";S.filter="all";save();render();window.scrollTo(0,0)});
+  P.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{const go=()=>{S.who=b.dataset.who;S.tab=S.who==="parent"?"approve":"today";S.filter="all";save();render();window.scrollTo(0,0)};
+    if(NATIVE&&b.dataset.who==="parent"&&S.who!=="parent")BrightSproutNative.call("parentUnlock").then(r=>{if(r&&r.ok)go()});else go()});
   // tabs
   const isParent=S.who==="parent";document.body.classList.toggle("kidmode",!isParent);document.body.style.setProperty("--kc",isParent?"var(--leaf)":(KC[S.who]||"var(--leaf)"));
   const tabs=isParent?[["approve","✅","Approve"],["videos","🎬","Videos"],["rewards","🎁","Rewards"],["family","📊","Week"],["settings","⚙️","Settings"]]:[["today","🗓️","Today"],["learn","📚","Learn"],["watch","🎬","Videos"],["shop","🎁","Shop"],["me","🏅","Me"]];
@@ -491,7 +492,7 @@ function render(){
   $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();window.scrollTo(0,0)});
   const M=$("#main");
   if(isParent){M.innerHTML=({approve:viewApprove,videos:viewVideos,rewards:viewRewards,family:viewFamily,settings:viewSettings})[S.tab]();bindParent()}
-  else{const k=kid(S.who);if(locked(k)){M.innerHTML=lockView(k);bindLock(k);return}M.innerHTML=(S.settings.ai?`<button class="askfab" data-askspr aria-label="Ask Sprout">🌱 Ask Sprout</button>`:"")+({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
+  else{const k=kid(S.who);if(locked(k)&&!isDevKid(k)){M.innerHTML=lockView(k);bindLock(k);return}M.innerHTML=(S.settings.ai?`<button class="askfab" data-askspr aria-label="Ask Sprout">🌱 Ask Sprout</button>`:"")+({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
 }
 
 /* ---------- TODAY'S CHALLENGE: watch & try, learning quiz, food quiz ---------- */
@@ -814,13 +815,49 @@ function chatHistory(){
 
 const KC={mia:"#F2A20C",leo:"#F07A2E",ava:"#8A63E0"};
 /* ---------- SCREEN TIME LINK (optional, parent-controlled). Prototype simulates usage; a real iPhone app would use Apple's Screen Time API. ---------- */
-function scr(k){S.screen=S.screen||{};const d=dayNo();let x=S.screen[k.id];if(!x||x.day!==d)x=S.screen[k.id]={day:d,used:0,extra:0};return x}
+function scr(k){S.screen=S.screen||{};const d=NATIVE?localDay():dayNo();let x=S.screen[k.id];if(!x||x.day!==d)x=S.screen[k.id]={day:d,used:0,extra:0};return x}
 const limitOf=k=>(S.settings.screen.limits[k.id]||60);
 const timeLeft=k=>{const x=scr(k);return Math.max(0,limitOf(k)+x.extra-x.used)};
 const locked=k=>S.settings.screen.on&&timeLeft(k)<=0;
 function addMinutes(k,m){scr(k).extra+=m;const r=(S.timeReq||[]).find(q=>q.kid===k.id&&q.state==="asked");if(r)r.state="given"}
+/* ---------- NATIVE iPHONE APP (real Screen Time blocking). Everything below only runs inside the BrightSprout iPhone app;
+   on the website NATIVE is false and the simulated screen time above works exactly as before. ---------- */
+var NATIVE=!!(window.BrightSproutNative&&window.BrightSproutNative.available),lastSync="",lastStatus="";
+function localDay(){const d=new Date();return d.getFullYear()*1e4+(d.getMonth()+1)*100+d.getDate()}
+const NS=()=>(NATIVE&&BrightSproutNative.status)||{};
+const devKid=()=>(S.settings.screen.device&&kid(S.settings.screen.device))||null;
+const isDevKid=k=>NATIVE&&!!devKid()&&devKid().id===k.id;
+function nativeSync(){if(!NATIVE)return;const k=devKid(),m={on:!!(S.settings.screen.on&&k),kidId:k?k.id:"",kidName:k?k.name:"",limit:k?limitOf(k):60,extra:k?scr(k).extra:0},j=JSON.stringify(m);
+  if(j===lastSync)return;lastSync=j;BrightSproutNative.post("sync",m)}
+if(NATIVE)window.addEventListener("bsnative",e=>{const st=e.detail||{},k=devKid();
+  if(k&&S.settings.screen.on){const x=scr(k);if(st.blocked&&st.blockedAt)x.used=Math.max(x.used,st.blockedAt);
+    if(st.asked&&locked(k)&&!(S.timeReq||[]).some(q=>q.kid===k.id&&q.state==="asked")){S.timeReq=S.timeReq||[];S.timeReq.push({id:"t"+Date.now(),kid:k.id,state:"asked"})}
+    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(err){}}
+  const j=JSON.stringify(st)+JSON.stringify(k&&scr(k))+(S.timeReq||[]).length;if(j!==lastStatus){lastStatus=j;render()}});
+function nativeCard(){const st=NS(),dk=devKid(),err=st.error?`<p class="note" style="margin-top:6px;color:#C0392B">${esc(st.error)}</p>`:"";
+  if(!st.authorized)return `<div class="card" style="margin-top:10px;background:var(--surface-2)"><b>📱 Real blocking on this iPhone</b>
+    <p class="note" style="margin-top:4px">Let BrightSprout use Screen Time so the apps you choose really lock when time runs out, until you give more time.</p>
+    <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px"><button class="ok" data-nauth="child">This is my child's iPhone</button><button class="no" data-nauth="individual">Test on my own iPhone</button></div>
+    <p class="note" style="margin-top:6px">On a child's iPhone, your child needs to be in your Family Sharing group. You'll sign in with your Apple ID to approve.</p>${err}</div>`;
+  const c=(v,w)=>v?v+" "+w+(v>1?"s":""):"",what=[c(st.apps,"app"),c(st.categories,"category").replace("categorys","categories"),c(st.sites,"website")].filter(Boolean).join(", ");
+  const active=st.enabled&&!!what;
+  return `<div class="card" style="margin-top:10px;background:var(--surface-2)"><div class="section-title"><h3 style="font-size:16px">📱 Real blocking on this iPhone</h3><span class="tag ${active?"st-approved":""}">${active?"Active":"Not set up"}</span></div>
+    <label class="setrow" style="margin-top:8px"><span>Who uses this iPhone?</span><select id="ndev" aria-label="Who uses this iPhone"><option value="">Choose a child</option>${S.kids.map(k=>`<option value="${k.id}" ${dk&&dk.id===k.id?"selected":""}>${k.av} ${k.name}</option>`).join("")}</select></label>
+    <div class="row" style="justify-content:space-between;gap:8px;margin-top:8px"><span class="note">${what?"Blocks "+what:"No apps chosen yet"}</span><button class="ok" data-npick>Choose apps</button></div>
+    ${!S.settings.screen.on?`<p class="note" style="margin-top:6px">Turn on the screen time link above to start blocking.</p>`:dk?`<p class="note" style="margin-top:6px">${esc(dk.name)} can use these apps for ${st.allowed} min today.${st.blocked?" They're locked right now.":""} Extra minutes from rewards, goals and “+15 min” unlock them right away.</p>`:`<p class="note" style="margin-top:6px">Choose which child uses this iPhone.</p>`}
+    ${st.accurateRestart===false?`<p class="note" style="margin-top:6px">This iPhone has iOS older than 17.4, so extra minutes count from when you give them and can be a little generous.</p>`:""}${err}
+    <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="no" data-npin>Change parent PIN</button></div></div>`}
+function nativeChip(k){const x=scr(k),req=(S.timeReq||[]).find(q=>q.kid===k.id&&q.state==="asked");
+  if(locked(k))return `<div class="card scrchip"><div class="row"><span style="font-size:26px" aria-hidden="true">🌙</span><div class="grow"><b>Screen time is done for today</b><small class="note" style="display:block">Your games and videos are locked. You can still earn Stars here!</small></div></div>
+    ${req?`<div class="tag" style="font-size:13px;padding:8px 14px;margin-top:8px">⏳ Asked a parent for more time</div>`:`<button class="qbtn" data-askmore style="margin-top:8px;padding:12px 16px">🙋 Ask a parent for more time</button>`}</div>`;
+  return `<div class="card scrchip"><div class="row"><span style="font-size:26px" aria-hidden="true">⏱️</span><div class="grow"><b>${limitOf(k)+x.extra} min of screen time today</b><small class="note" style="display:block">Earn Stars for more!</small></div></div></div>`}
+function bindNative(){if(!NATIVE)return;
+  document.querySelectorAll("[data-nauth]").forEach(b=>b.onclick=()=>BrightSproutNative.post("authorize",{mode:b.dataset.nauth}));
+  const nd=$("#ndev");if(nd)nd.onchange=()=>{S.settings.screen.device=nd.value||null;toast(nd.value?`This iPhone is ${kid(nd.value).name}'s`:"No child chosen");save();render()};
+  const np=document.querySelector("[data-npick]");if(np)np.onclick=()=>BrightSproutNative.post("pickApps");
+  const pn=document.querySelector("[data-npin]");if(pn)pn.onclick=()=>BrightSproutNative.call("changePin").then(r=>{if(r&&r.ok)toast("Parent PIN saved")})}
 const screenMins=t=>{const m=/(\d+)\s*(min|minute)/i.exec(t);return /screen/i.test(t)&&m?+m[1]:0};
-function screenChip(k){if(!S.settings.screen.on)return "";const l=timeLeft(k),lim=limitOf(k)+scr(k).extra;
+function screenChip(k){if(!S.settings.screen.on)return "";if(isDevKid(k))return nativeChip(k);const l=timeLeft(k),lim=limitOf(k)+scr(k).extra;
   return `<div class="card scrchip"><div class="row"><span style="font-size:26px" aria-hidden="true">⏱️</span><div class="grow"><b>${l} min of screen time left today</b><div class="bar ${l<10?"warn":"sky"}" style="margin-top:6px"><i style="width:${lim?l/lim*100:0}%"></i></div></div></div>
   <button class="reset" data-simuse style="margin-top:4px">Demo: use 15 minutes</button></div>`}
 function lockView(k){const req=(S.timeReq||[]).find(q=>q.kid===k.id&&q.state==="asked");
@@ -914,6 +951,7 @@ function viewMe(k){
 }
 function bindLock(k){const b=document.querySelector("[data-askmore]");if(b)b.onclick=()=>{S.timeReq=S.timeReq||[];S.timeReq.push({id:"t"+Date.now(),kid:k.id,state:"asked"});toast("Asked a parent for more time");save();render()}}
 function bindKid(k){
+  if(isDevKid(k))bindLock(k);
   const su=document.querySelector("[data-simuse]");if(su)su.onclick=()=>{scr(k).used+=15;if(locked(k))toast("Screen time is up!");save();render()};
   document.querySelectorAll("[data-askspr]").forEach(b=>b.onclick=()=>openChat(k));
   bindLearn(k);
@@ -981,7 +1019,7 @@ function viewSettings(){
     ${S.settings.screen.on?S.kids.map(k=>{const x=scr(k);return `<div class="setrow"><span>${k.av} ${k.name}<small class="note" style="display:block">Used ${x.used} of ${limitOf(k)+x.extra} min today</small></span>
       <select data-limit="${k.id}" aria-label="Daily limit for ${k.name}">${[15,30,45,60,90,120,180].map(m=>`<option value="${m}" ${m===limitOf(k)?"selected":""}>${m} min a day</option>`).join("")}</select></div>
       <div class="row" style="justify-content:flex-end;gap:6px"><button class="no" data-addmin="${k.id}|15">+15 min</button><button class="no" data-addmin="${k.id}|30">+30 min</button></div>`}).join(""):""}</div>
-    <p class="demo" style="margin-top:8px">In this prototype, screen use is simulated with a demo button. Blocking other apps for real needs the native iPhone app.</p></div>
+    ${NATIVE?nativeCard():`<p class="demo" style="margin-top:8px">In this prototype, screen use is simulated with a demo button. Blocking other apps for real needs the native iPhone app.</p>`}</div>
   <div class="card"><div class="section-title"><h3>🌱 Sprout AI helper</h3><span class="tag ${S.settings.ai?"st-approved":""}">${S.settings.ai?"On":"Off"}</span></div>
     <p class="note" style="margin-top:6px">Sprout is an AI study buddy powered by Claude. It answers questions at your child's age and grade, helps with homework step by step without handing over answers, and makes quizzes and practice tests. It steers away from grown-up topics and reminds kids never to share personal info.</p>
     <div class="list" style="margin-top:10px"><label class="tgl"><input type="checkbox" id="setai" ${S.settings.ai?"checked":""}><span>I'm the parent and I allow my kids to chat with Sprout</span></label></div>
@@ -1030,6 +1068,7 @@ function viewFamily(){
 function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
+  bindNative();
   const sc=$("#setscr");if(sc)sc.onchange=()=>{S.settings.screen.on=sc.checked;toast(sc.checked?"Screen time link is on":"Screen time link is off");save();render()};
   document.querySelectorAll("[data-limit]").forEach(sel=>sel.onchange=()=>{S.settings.screen.limits[sel.dataset.limit]=+sel.value;toast("Daily limit updated");save();render()});
   document.querySelectorAll("[data-addmin]").forEach(b=>b.onclick=()=>{const [id,m]=b.dataset.addmin.split("|");addMinutes(kid(id),+m);toast(`Gave ${kid(id).name} ${m} more minutes`);save();render()});
@@ -1097,7 +1136,9 @@ $("#psaw").onclick=()=>sendProof("saw");$("#prclose").onclick=closeProof;$("#pro
 let armed=false;
 $("#reset").onclick=()=>{const b=$("#reset");if(!armed){armed=true;b.textContent="Tap again to reset";setTimeout(()=>{armed=false;b.textContent="Reset demo"},2500);return}
   S=seed();save();armed=false;b.textContent="Reset demo";render();toast("Demo reset")};
+if(NATIVE&&S.who==="parent"){const dk=devKid()||S.kids[0];if(dk){S.who=dk.id;S.tab="today"}}
 render();
+if(NATIVE){BrightSproutNative.post("ready");nativeSync()}
 </script>
 
 </body>
