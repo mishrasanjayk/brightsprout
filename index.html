@@ -233,6 +233,15 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .chips{display:flex;gap:6px;flex-wrap:wrap;flex:none}
 .warnbox{background:var(--sun-soft);padding:12px;border-radius:14px;color:var(--ink)}
 .chist summary{cursor:pointer;font-weight:800;padding:6px 0}
+.goal{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line)}.goal:last-child{border-bottom:0}
+.goal .gi{font-size:30px;flex:none}.goal b{display:block;font-size:15px;line-height:1.25}.goal small{color:var(--muted);font-weight:700;font-size:12px}
+.goal.reached b{color:var(--leaf)}
+.goals{border:2px solid var(--sun)}
+.goalform{display:flex;flex-direction:column;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.goalform select,.goalform input{padding:10px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px;min-width:0}
+.goalform .row select{flex:1}
+.gnum{display:flex;align-items:center;gap:6px;font-weight:800;flex:none}.gnum input{width:78px}
+.gicons{display:flex;gap:6px;flex-wrap:wrap}.gicons .pfilter{font-size:18px;padding:6px 10px}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
 </style>
 
@@ -335,6 +344,7 @@ function seed(){
       {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}],
     requests:[{id:"q0",kid:"ava",reward:"r2",state:"asked"}],
     homework:[{id:"h1",kid:"leo",subj:"Math",t:"Math worksheet page 42",state:"todo"},{id:"h2",kid:"ava",subj:"Science",t:"Lab report on plant growth",state:"pending"}],
+    goals:[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:220,state:"active"},{id:"g2",kid:"ava",target:200,reward:"Movie night with friends",icon:"🎬",start:240,state:"active"}],
     goal:{t:"Weekend at the lake",target:1000,have:640}
   };
 }
@@ -342,6 +352,7 @@ const KEY="smartkids-proto-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.kids)S=seed();
 const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketball","running"]};
 S.settings=S.settings||{proof:false,autoDelete:true};
+if(!S.goals){const lk=S.kids.find(x=>x.id==="leo");S.goals=lk?[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:lk.lifetime-20,state:"active"}]:[]}
 S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
@@ -444,9 +455,20 @@ function award(k,a){
   const pts=Math.round(a.s*mult(k));
   k.stars+=pts;k.lifetime+=pts;k.pillar[a.p]=(k.pillar[a.p]||0)+1;
   S.goal.have=Math.min(S.goal.target,S.goal.have+pts);
+  checkGoals(k);
   return pts;
 }
-function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.homework||[]).filter(h=>h.state==="pending").length}
+/* ---------- KID GOALS: parent sets "earn N Stars -> reward" milestones; earning counts, spending doesn't ---------- */
+const GOAL_ICONS=["🎮","📺","🍦","🌳","🎬","🍕","🎁","🛝"];
+const gProg=g=>Math.min(g.target,Math.max(0,kid(g.kid).lifetime-g.start));
+function checkGoals(k){(S.goals||[]).filter(g=>g.kid===k.id&&g.state==="active"&&gProg(g)>=g.target).forEach(g=>{g.state="reached";setTimeout(()=>party("🎯","Goal reached!",g.reward),400)})}
+function goalsCard(k){const gs=(S.goals||[]).filter(g=>g.kid===k.id&&g.state!=="given");
+  if(!gs.length)return "";
+  return `<div class="card goals"><div class="section-title"><h3>🎯 My goals</h3><span>Set by your parent</span></div>
+  <div class="list" style="margin-top:8px">${gs.map(g=>{const pr=gProg(g);return `<div class="goal ${g.state}"><span class="gi" aria-hidden="true">${g.icon}</span><div class="grow"><b>${esc(g.reward)}</b>
+    <div class="bar sun" style="margin:6px 0 4px"><i style="width:${pr/g.target*100}%"></i></div>
+    <small>${g.state==="reached"?"🎉 You did it! Your parent will give you this reward.":`${pr} of ${g.target} ⭐ earned · ${g.target-pr} to go`}</small></div></div>`}).join("")}</div></div>`}
+function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.goals||[]).filter(g=>g.state==="reached").length+(S.homework||[]).filter(h=>h.state==="pending").length}
 
 function render(){
   // profiles
@@ -810,7 +832,7 @@ function viewToday(k){
   if(k.band==="sprout"){
     const grown=Object.values(st).filter(v=>v==="done").length;
     const sprout=["🌰","🌱","🌿","🪴","🌳","🌳"][Math.min(grown,5)];
-    return header(k)+tipBubble(k)+daily(k)+`
+    return header(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
     <div class="card pet"><div class="sprout" id="sprout" aria-hidden="true">${sprout}</div>
       <div class="grow" style="flex:1"><b style="font-family:var(--display);font-size:18px">Sunny the sprout</b>
       <p class="note">Sunny grows each time ${k.name} does a healthy thing. Ask a grown-up to tap “Done!” with you.</p>
@@ -825,7 +847,7 @@ function viewToday(k){
   }
   const list=acts(k).filter(a=>S.filter==="all"||a.p===S.filter);
   const total=acts(k).length,done=Object.values(st).filter(v=>v==="done").length;
-  return header(k)+tipBubble(k)+daily(k)+`
+  return header(k)+goalsCard(k)+tipBubble(k)+daily(k)+`
   <div class="card"><div class="section-title"><h3>Today’s quests</h3><span>${done} of ${total}</span></div>
     <div class="bar" style="margin-top:10px"><i style="width:${done/total*100}%"></i></div>
     ${k.band==="trail"?`<p class="note" style="margin-top:10px">You log your own quests. Parents can spot-check.</p>`:`<p class="note" style="margin-top:10px">Tap Done and a parent will give you your Stars.</p>`}</div>
@@ -902,6 +924,7 @@ function viewApprove(){
     <div class="list">${hws.length?hws.map(h=>{const k=kid(h.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${HW_SUBJ[h.subj]||"📄"}</span>
       <div class="grow"><div class="who">${k.av} ${k.name} · ${esc(h.subj)}</div><b style="font-size:15px">${esc(h.t)}</b></div>
       <button class="no" data-hwno="${h.id}">Not yet</button><button class="ok" data-hwok="${h.id}">+${Math.round(20*mult(k))} ⭐</button></div>${proofView(h.kid,"hw"+h.id)}`}).join(""):`<p class="empty">No homework waiting.</p>`}</div></div>`})()}
+  ${(()=>{const rg=(S.goals||[]).filter(g=>g.state==="reached");return rg.length?`<div class="card"><div class="section-title"><h3>🎯 Goals reached</h3><span>${rg.length}</span></div><div class="list">${rg.map(g=>{const k=kid(g.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${g.icon}</span><div class="grow"><div class="who">${k.av} ${k.name} earned ${g.target} ⭐</div><b style="font-size:15px">${esc(g.reward)}</b></div><button class="ok" data-ggive="${g.id}">Give it</button></div>`}).join("")}</div></div>`:""})()}
   <div class="card"><div class="section-title"><h3>Reward requests</h3><span>${reqs.length} waiting</span></div>
     <div class="list">${reqs.length?reqs.map(q=>{const k=kid(q.kid),r=rewardById(q.reward);return `<div class="appr"><span style="font-size:28px" aria-hidden="true">${r.icon}</span>
       <div class="grow"><div class="who">${k.av} ${k.name} · has ${k.stars} ⭐</div><b style="font-size:15px">${esc(r.t)}</b></div>
@@ -945,7 +968,18 @@ function viewSettings(){
   <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. In the real app you can export or delete all family data from here.</p></div>`;
 }
 function viewRewards(){
+  const gs=(S.goals||[]).filter(g=>g.state!=="given");
   return `<div><h2 style="font-size:24px">Rewards</h2><p class="note">You decide what Stars can buy. Real-world treats and time together work best.</p></div>
+  <div class="card"><div class="section-title"><h3>🎯 Goals for each kid</h3><span>${gs.length} active</span></div>
+    <p class="note" style="margin-top:4px">Set a target like “earn 50 Stars, get 30 minutes of extra screen time”. Stars earned after you set it count, and kids keep their Stars to spend in the shop.</p>
+    <div class="list" style="margin-top:8px">${gs.length?gs.map(g=>{const k=kid(g.kid),pr=gProg(g);return `<div class="goal ${g.state}"><span class="gi" aria-hidden="true">${g.icon}</span><div class="grow"><div class="who">${k.av} ${k.name}</div><b>${esc(g.reward)}</b>
+      <div class="bar sun" style="margin:6px 0 4px"><i style="width:${pr/g.target*100}%"></i></div><small>${pr} of ${g.target} ⭐${g.state==="reached"?" · Reached!":""}</small></div>
+      ${g.state==="reached"?`<button class="ok" data-ggive="${g.id}">Give it</button>`:`<button class="no" data-gdel="${g.id}" aria-label="Remove goal">Remove</button>`}</div>`}).join(""):`<p class="empty">No goals yet. Add one below.</p>`}</div>
+    <form class="goalform" id="gadd"><div class="row"><select id="gkid" aria-label="Kid">${S.kids.map(k=>`<option value="${k.id}">${k.av} ${k.name}</option>`).join("")}</select>
+      <label class="gnum">Earn <input id="gtarget" type="number" min="5" max="2000" step="5" value="50" aria-label="Stars to earn"> ⭐</label></div>
+      <input id="greward" placeholder="Reward, e.g. 30 minutes of extra screen time" maxlength="60" required>
+      <div class="gicons" role="group" aria-label="Pick an icon">${GOAL_ICONS.map((i,n)=>`<button type="button" class="pfilter" data-gicon="${i}" aria-pressed="${n===0}">${i}</button>`).join("")}</div>
+      <button class="ok" type="submit">Add goal</button></form></div>
   <div class="card"><div class="list">${S.rewards.map(r=>`<div class="appr"><span style="font-size:26px" aria-hidden="true">${r.icon}</span><b class="grow" style="font-size:15px">${esc(r.t)}</b>
     <div class="price"><button data-dec="${r.id}" aria-label="Lower price">−</button><span>${r.c} ⭐</span><button data-inc="${r.id}" aria-label="Raise price">+</button></div></div>`).join("")}</div></div>
   <div class="card"><h3 style="font-size:18px;margin-bottom:10px">Add a reward</h3>
@@ -964,6 +998,12 @@ function viewFamily(){
 function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
+  let gicon=GOAL_ICONS[0];
+  document.querySelectorAll("[data-gicon]").forEach(b=>b.onclick=()=>{gicon=b.dataset.gicon;document.querySelectorAll("[data-gicon]").forEach(x=>x.setAttribute("aria-pressed",x===b))});
+  const ga=$("#gadd");if(ga)ga.onsubmit=e=>{e.preventDefault();const k=kid($("#gkid").value),t=Math.max(5,Math.min(2000,parseInt($("#gtarget").value,10)||50)),r=$("#greward").value.trim();if(!r)return;
+    S.goals=S.goals||[];S.goals.push({id:"g"+Date.now(),kid:k.id,target:t,reward:r,icon:gicon,start:k.lifetime,state:"active"});toast(`Goal set for ${k.name}`);save();render()};
+  document.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{S.goals=S.goals.filter(g=>g.id!==b.dataset.gdel);toast("Goal removed");save();render()});
+  document.querySelectorAll("[data-ggive]").forEach(b=>b.onclick=()=>{const g=S.goals.find(x=>x.id===b.dataset.ggive);g.state="given";burst(b);toast(`${g.reward} for ${kid(g.kid).name}!`);save();render()});
   const sa=$("#setai");if(sa)sa.onchange=()=>{S.settings.ai=sa.checked;toast(sa.checked?"Sprout is on for your kids":"Sprout is off");save();render()};
   document.querySelectorAll("[data-chclear]").forEach(b=>b.onclick=()=>{delete S.chats[b.dataset.chclear];toast("Chats deleted");save();render()});
   document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);toast(`${k.name} got ${p} Stars for homework`);save();render()});
