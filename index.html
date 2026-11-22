@@ -288,7 +288,7 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
   <div class="sheet-in">
     <div class="row" style="margin-bottom:10px"><b class="grow" id="ptitle" style="font-family:var(--display);font-size:17px"></b><button class="no" id="pclose">Close</button></div>
     <div class="frame"><iframe id="pframe" title="Video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
-    <p class="note" style="margin-top:10px">Video not showing? Some previews block players. <a id="pout" target="_blank" rel="noopener" style="color:var(--sky);font-weight:800">Open in YouTube</a></p>
+    <p class="note" style="margin-top:10px">Video not playing? Ask a grown-up to pick another one in Parent › Videos.</p>
   </div>
 </div>
 <div class="sheet" id="proof" hidden role="dialog" aria-modal="true" aria-labelledby="prtitle">
@@ -448,10 +448,29 @@ const PICKS={
   "learn:explorer:5":{id:"SLpEH1BSwMc",t:"Why Do We Need Sleep?"},
   "learn:trail:0":{id:"S59kJBP0Kaw",t:"Growth Mindset with Dr. Carol Dweck (Khan Academy)"},
   "learn:trail:1":{id:"lEXBxijQREo",t:"How Sugar Affects the Brain (TED-Ed)"},
-  "learn:trail:5":{id:"l-gQLqv9f4o",t:"A Pep Talk from Kid President to You"}
+  "learn:trail:5":{id:"l-gQLqv9f4o",t:"A Pep Talk from Kid President to You"},
+  "learn:sprout:4":{id:"lv7vZoR5zAI",t:"Brushy Brush Song (Sesame Street)"},
+  "learn:explorer:2":{id:"XtSq1wcFSEI",t:"Your Body's Senses (SciShow Kids)"},
+  "learn:explorer:4":{id:"59tKl37x1d4",t:"Elmo and Rosita Teach Friendship (Sesame Street)"},
+  "learn:trail:2":{id:"6oKsikHollM",t:"The Mysterious Workings of the Adolescent Brain (TED)"},
+  "learn:trail:3":{id:"tHYis-DP0oU",t:"What Is a Variable? (Khan Academy)"},
+  "act:s1":{id:"JowIH4LFR-A",t:"Eat a Rainbow (Sesame Street)"},
+  "act:s2":{id:"1bRTC3cfJIk",t:"Water Has Superpowers (SciShow Kids)"},
+  "act:s4":{id:"plpyKJ1Qu2A",t:"Milkshake Song + More Dance-Alongs (GoNoodle)"},
+  "act:s6":{id:"SFE0mMWbA-Y",t:"Clean Up Song (Super Simple Songs)"},
+  "act:s8":{id:"lv7vZoR5zAI",t:"Brushy Brush Song (Sesame Street)"},
+  "act:e1":{id:"DLPVqMOduLM",t:"Try It! New Foods (Sesame Street)"},
+  "act:e2":{id:"OOdd_XZyM3g",t:"Fun Recipes with Cookie Monster (Sesame Street)"},
+  "act:e3":{id:"1b6axyuaKcY",t:"Boom Chicka Boom (GoNoodle)"},
+  "act:t1":{id:"a2dSSTileOE",t:"Healthy Dinners Kids Can Make"},
+  "act:t2":{id:"NPC-fZ_dVic",t:"5 Easy and Healthy After-School Snacks"},
+  "act:t3":{id:"QdeaHVjRyxU",t:"Run Faster with Proper Form"},
+  "act:t7":{id:"S59kJBP0Kaw",t:"Growth Mindset with Dr. Carol Dweck (Khan Academy)"}
 };
+/* Every video plays inside the app. Slots with no picked video are hidden; nothing opens YouTube. */
+const hasVid=v=>!!(v&&v.key&&pick(v.key));
 function pick(key){const o=(S.vids||{})[key];if(o&&o.id)return {...o,custom:true};const d=PICKS[key];return d?{...d,ok:!!(o&&o.ok)}:null}
-function slotUrl(v){const p=v.key&&pick(v.key);return p?ytw(p.id):yt(v.q)}
+function slotUrl(v){const p=v.key&&pick(v.key);return p?ytw(p.id):""}
 // Learn good things: trusted kid channels by age band
 const LEARN={
   sprout:[
@@ -470,12 +489,12 @@ const LEARN={
   trail:[
     {i:"🧠",t:"Growth mindset",ch:"Khan Academy",q:"Khan Academy growth mindset"},
     {i:"🍬",t:"How sugar affects your brain",ch:"TED-Ed",q:"TED-Ed how sugar affects the brain"},
-    {i:"📱",t:"Your brain on screens",ch:"TED-Ed",q:"TED-Ed screens brain teens"},
+    {i:"📱",t:"How your teen brain works",ch:"TED",q:"TED adolescent brain"},
     {i:"🧮",t:"Math you can use",ch:"Khan Academy",q:"Khan Academy math"},
     {i:"🌱",t:"Habits that stick",ch:"TED-Ed",q:"TED-Ed habits"},
     {i:"🤝",t:"Kindness and leadership",ch:"Kid President",q:"Kid President pep talk"}]
 };
-const vidLink=a=>`<a class="vid" href="${vidUrl(a)}" target="_blank" rel="noopener" aria-label="Watch a video: ${esc(a.t)}">▶</a>`;
+const vidLink=a=>hasVid(a)?`<a class="vid" href="${slotUrl(a)}" aria-label="Watch a video: ${esc(a.t)}">▶</a>`:"";
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
 function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2200)}
@@ -580,6 +599,7 @@ const QUIZ={
   }
 };
 for(const b in LEARN)LEARN[b].forEach((v,i)=>v.key=`learn:${b}:${i}`);
+for(const b in ACTIVITIES)ACTIVITIES[b].forEach(a=>a.key="act:"+a.id);
 const dayNo=()=>Math.floor(Date.now()/864e5);
 function todaysQs(kind,band){const bank=QUIZ[kind][band],d=dayNo(),out=[];for(let i=0;i<3;i++)out.push(bank[(d*3+i)%bank.length]);return out}
 function todaysSport(k){const list=k.sports.length?k.sports:["running"];return list[dayNo()%list.length]}
@@ -595,7 +615,7 @@ function daily(k){
   return `<div class="card daily"><div class="section-title"><h3>⭐ Today’s challenge</h3><span>${steps} of 3</span></div>
     <div class="bar sun" style="margin:10px 0 4px"><i style="width:${steps/3*100}%"></i></div>
     ${step(1,d.tried,sport.i,`Watch and try: ${sport.n}`,d.tried?"+15 ⭐ earned":"Watch the video, then go try it",
-      d.tried?"":`<a class="vid" href="${slotUrl(v)}" target="_blank" rel="noopener" aria-label="Watch ${sport.n} video">▶</a><button class="qbtn" data-dtry>I tried it</button>`)}
+      d.tried?"":`${hasVid(v)?`<a class="vid" href="${slotUrl(v)}" aria-label="Watch ${sport.n} video">▶</a>`:""}<button class="qbtn" data-dtry>I tried it</button>`)}
     ${["learn","food"].map((kind,i)=>step(i+2,d[kind]!==null,DQ[kind].i,DQ[kind].n,d[kind]!==null?`${d[kind]} of 3 right · +${d[kind]*5+(d[kind]===3?5:0)} ⭐`:DQ[kind].sub,
       d[kind]!==null?"":`<button class="qbtn" data-quiz="${kind}">Start</button>`)).join("")}
     ${steps===3?`<p class="note" style="margin-top:8px;text-align:center;font-weight:800;color:var(--leaf)">Challenge complete! Come back tomorrow for a new one.</p>`:""}
@@ -1017,18 +1037,18 @@ function viewToday(k){
 }
 function viewWatch(k){
   const byP={};acts(k).forEach(a=>(byP[a.p]=byP[a.p]||[]).push(a));
-  const vrow=(icon,title,sub,v,cls="")=>{const p=v.key&&pick(v.key);if(p)sub=p.t+(p.ok||p.custom?" · ✓ Parent approved":"");return `<a class="vrow" href="${slotUrl(v)}" target="_blank" rel="noopener"><span class="ic ${cls}" aria-hidden="true">${icon}</span><span style="flex:1;min-width:0"><b style="display:block">${esc(title)}</b><small style="color:var(--muted);font-weight:700;font-size:12px">${esc(sub)}</small></span><span class="play">▶ Watch</span></a>`};
+  const vrow=(icon,title,sub,v,cls="")=>{const p=v.key&&pick(v.key);if(p)sub=p.t+(p.ok||p.custom?" · ✓ Parent approved":"");return `<a class="vrow" href="${slotUrl(v)}"><span class="ic ${cls}" aria-hidden="true">${icon}</span><span style="flex:1;min-width:0"><b style="display:block">${esc(title)}</b><small style="color:var(--muted);font-weight:700;font-size:12px">${esc(sub)}</small></span><span class="play">▶ Watch</span></a>`};
   return `<div><h2 style="font-size:24px">Watch and learn</h2><p class="note">Videos picked for ${k.name}’s sports and age, plus a how-to for every activity.</p></div>
   <div class="card"><div class="section-title"><h3>🏆 My sports</h3><span>Tap to pick</span></div>
     <div class="pillars" style="margin-top:10px" role="group" aria-label="Pick favorite sports">${Object.entries(SPORTS).map(([id,sp])=>`<button class="pfilter" data-sport="${id}" aria-pressed="${k.sports.includes(id)}">${sp.i} ${sp.n}</button>`).join("")}</div></div>
   ${k.sports.length?k.sports.map(id=>`<div class="section-title"><h3>${SPORTS[id].i} ${SPORTS[id].n}</h3></div>
-    <div class="vlist">${sportVids(id,k.band).map(v=>vrow(SPORTS[id].i,v.k,v.d,v,"p-move")).join("")}</div>`).join(""):`<p class="empty">Pick a sport above to get videos for it.</p>`}
+    <div class="vlist">${sportVids(id,k.band).filter(hasVid).map(v=>vrow(SPORTS[id].i,v.k,v.d,v,"p-move")).join("")}</div>`).join(""):`<p class="empty">Pick a sport above to get videos for it.</p>`}
   <div class="section-title"><h3>🌟 Learn good things</h3><span>Kid-friendly channels</span></div>
-  <div class="vlist">${LEARN[k.band].map(v=>vrow(v.i,v.t,v.ch,v,"p-learn")).join("")}</div>
+  <div class="vlist">${LEARN[k.band].filter(hasVid).map(v=>vrow(v.i,v.t,v.ch,v,"p-learn")).join("")}</div>
   <div class="section-title"><h3>🎬 How to do today’s activities</h3></div>
-  ${Object.entries(byP).map(([p,list])=>`<div class="section-title"><h3 style="font-size:15px;color:var(--muted)">${PILLARS[p].icon} ${PILLARS[p].name}</h3></div>
-  <div class="vlist">${list.map(a=>`<a class="vrow" href="${vidUrl(a)}" target="_blank" rel="noopener"><span class="ic p-${a.p}" aria-hidden="true">${a.icon}</span><b>${esc(a.t)}</b><span class="play">▶ Watch</span></a>`).join("")}</div>`).join("")}
-  <p class="demo">Prototype links open a YouTube search. In the real app, parents approve a hand-picked, kid-safe video for each one.</p>`;
+  ${Object.entries(byP).filter(([p,list])=>list.some(hasVid)).map(([p,list])=>`<div class="section-title"><h3 style="font-size:15px;color:var(--muted)">${PILLARS[p].icon} ${PILLARS[p].name}</h3></div>
+  <div class="vlist">${list.filter(hasVid).map(a=>`<a class="vrow" href="${slotUrl(a)}"><span class="ic p-${a.p}" aria-hidden="true">${a.icon}</span><b>${esc(a.t)}</b><span class="play">▶ Watch</span></a>`).join("")}</div>`).join("")}
+  <p class="demo">Every video plays right here in the app. Parents can review and change them in Parent › Videos.</p>`;
 }
 function viewShop(k){
   const mine=S.requests.filter(r=>r.kid===k.id);
@@ -1094,18 +1114,23 @@ function viewApprove(){
 }
 let VEDIT=null;
 function viewVideos(){
-  const row=(key,icon,label)=>{const p=pick(key);if(!p)return "";const st=p.custom?"Your pick":p.ok?"Approved":"Needs review";
-    return `<div class="vslot"><div class="row"><span style="font-size:24px" aria-hidden="true">${icon}</span><div class="grow"><b>${esc(label)}</b><a class="vt" href="${ytw(p.id)}" target="_blank" rel="noopener">▶ ${esc(p.t)}</a></div><span class="tag st-${st.replace(/ /g,"").toLowerCase()}">${st}</span></div>
+  const row=(key,icon,label)=>{const p=pick(key);
+    if(!p)return `<div class="vslot"><div class="row"><span style="font-size:24px" aria-hidden="true">${icon}</span><div class="grow"><b>${esc(label)}</b><small class="note" style="display:block">No video yet, so kids don't see this one</small></div><span class="tag">Empty</span></div>
+    ${VEDIT===key?`<form class="addform" data-vform="${key}" style="margin-top:8px"><input id="vin" placeholder="Paste a YouTube link" required><button class="ok" type="submit">Save</button></form>`:`<div class="row" style="justify-content:flex-end;margin-top:6px"><button class="no" data-vedit="${key}">Add a video</button></div>`}</div>`;
+    const st=p.custom?"Your pick":p.ok?"Approved":"Needs review";
+    return `<div class="vslot"><div class="row"><span style="font-size:24px" aria-hidden="true">${icon}</span><div class="grow"><b>${esc(label)}</b><a class="vt" href="${ytw(p.id)}">▶ ${esc(p.t)}</a></div><span class="tag st-${st.replace(/ /g,"").toLowerCase()}">${st}</span></div>
     ${VEDIT===key?`<form class="addform" data-vform="${key}" style="margin-top:8px"><input id="vin" placeholder="Paste a YouTube link" required><button class="ok" type="submit">Save</button></form>`:
     `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:6px">${p.ok||p.custom?"":`<button class="ok" data-vok="${key}">Approve</button>`}<button class="no" data-vedit="${key}">Replace</button>${p.custom?`<button class="no" data-vreset="${key}">Use suggestion</button>`:""}</div>`}</div>`};
   const sports=Object.entries(SPORTS).map(([id,sp])=>row("sport:"+id,sp.i,sp.n+" skills")).join("");
   const learn=Object.entries(BANDS).map(([b,band])=>`<h4 class="vh">${band.name} (${band.ages})</h4>`+LEARN[b].map(v=>row(v.key,v.i,v.t)).join("")).join("");
-  const n=Object.keys(PICKS).length,ok=Object.keys(PICKS).filter(k=>{const p=pick(k);return p.ok||p.custom}).length;
+  const acts2=Object.entries(BANDS).map(([b,band])=>`<h4 class="vh">${band.name} (${band.ages})</h4>`+ACTIVITIES[b].map(a=>row(a.key,a.icon,a.t)).join("")).join("");
+  const keys=[...new Set([...Object.keys(PICKS),...Object.keys(S.vids||{})])].filter(k=>pick(k)),n=keys.length,ok=keys.filter(k=>{const p=pick(k);return p.ok||p.custom}).length;
   return `<div><h2 style="font-size:24px">Video library</h2><p class="note">Every video kids see is picked ahead of time. Watch each one, then approve it or paste a link to a better one.</p></div>
   <div class="card"><div class="section-title"><h3>Reviewed</h3><span>${ok} of ${n}</span></div><div class="bar" style="margin-top:10px"><i style="width:${ok/n*100}%"></i></div></div>
   <div class="card"><h3 style="font-size:18px">🏆 Sports skills</h3><div class="list" style="margin-top:6px">${sports}</div></div>
   <div class="card"><h3 style="font-size:18px">🌟 Learn good things</h3><div class="list" style="margin-top:6px">${learn}</div></div>
-  <p class="demo">Suggested videos were found with a web search and still need a grown-up to watch them. Slots without a pick use a YouTube search for now.</p>`;
+  <div class="card"><h3 style="font-size:18px">🎬 Activity how-tos</h3><div class="list" style="margin-top:6px">${acts2}</div></div>
+  <p class="demo">Suggested videos were found with a web search and still need a grown-up to watch them. Empty slots stay hidden from kids until you add a video. Everything plays inside the app.</p>`;
 }
 function viewSettings(){
   return `<div><h2 style="font-size:24px">Settings</h2><p class="note">Only parents can see and change these.</p></div>
@@ -1215,7 +1240,7 @@ function bindParent(){
     S.rewards.push({id:"r"+Date.now(),icon:"🎁",t:n,c:Math.max(5,Math.min(1000,c))});toast("Reward added to the shop");save();render()};
 }
 // In-app player: videos with a known id play in an embedded YouTube player (no related videos from other channels)
-function openPlayer(id,title,url){$("#ptitle").textContent=title||"Video";$("#pout").href=url;
+function openPlayer(id,title,url){$("#ptitle").textContent=title||"Video";
   $("#pframe").src="https://www.youtube-nocookie.com/embed/"+id+"?autoplay=1&playsinline=1&rel=0&modestbranding=1";$("#player").hidden=false}
 function closePlayer(){$("#pframe").src="about:blank";$("#player").hidden=true}
 $("#pclose").onclick=closePlayer;$("#player").onclick=e=>{if(e.target.id==="player")closePlayer()};
