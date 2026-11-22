@@ -271,6 +271,10 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 #gatebox .gq{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:.5px}
 #gatebox input,.pinin{padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:24px;text-align:center;letter-spacing:6px;min-width:0}
 .pinin{font-size:18px;width:120px;letter-spacing:4px}
+.pwf{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.pwf label{display:flex;flex-direction:column;gap:4px;font-weight:800;font-size:14px}
+.pwf input,#gatebox input.pw{padding:11px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px;min-width:0;letter-spacing:normal;text-align:left}
+.pwmsg{background:var(--surface-2);border-radius:14px;padding:12px;font-weight:700;font-size:14px;line-height:1.4;text-align:left}
 </style>
 
 <div class="app">
@@ -887,15 +891,17 @@ function renderSetup(){
   <div class="card"><div class="step"><i>2</i>Add your kids</div>
     <div style="margin-top:6px">${S.kids.length?S.kids.map(kidRow).join(""):`<p class="note">No kids yet. Add one child or more, ages 2 to 14.</p>`}</div>
     <button class="addbtn" data-addkid style="margin-top:10px">＋ Add ${S.kids.length?"another":"a"} child</button></div>
-  <div class="card"><div class="step"><i>3</i>Parent PIN <span class="note" style="font-family:var(--body);font-size:13px">(optional)</span></div>
-    <p class="note" style="margin-top:6px">Kids need this to open the Parent area. Skip it and they'll get a grown-up math question instead.</p>
-    <div class="row" style="margin-top:8px;gap:8px"><input class="pinin" id="spin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="4-digit parent PIN" value="${S.settings.pin||""}"></div></div>
+  <div class="card"><div class="step"><i>3</i>Parent password</div>
+    <p class="note" style="margin-top:6px">You'll need it to open the Parent area. If you forget it, we'll send a reset link to your email.</p>
+    <div class="pwf"><label>Your email<input id="semail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" value="${esc(SF.email)}"></label>
+      <label>Password <small class="note" style="font-weight:700">(8 or more characters)</small><input id="spw" type="password" autocomplete="new-password" value="${esc(SF.pw)}"></label>
+      <label>Type it again<input id="spw2" type="password" autocomplete="new-password" value="${esc(SF.pw2)}"></label></div></div>
   <button class="bigbtn" data-setupdone ${S.kids.length?"":"disabled"}>${S.kids.length?"Let's go! 🚀":"Add a child to start"}</button>
-  <p class="note" style="text-align:center">First names and avatars only. Everything stays on this device. You can change kids any time in Parent › Settings.</p>
+  <p class="note" style="text-align:center">Kids: first names and avatars only, kept on this device. Your email is used only for password resets. You can change kids any time in Parent › Settings.</p>
   <button class="linkbtn" data-demo>Just looking? Try the demo family</button></div>`;
   $("#tabs").innerHTML="";
   $("#sstate").onchange=e=>{S.settings.state=e.target.value;save()};
-  $("#spin").oninput=e=>{const v=e.target.value.replace(/\D/g,"").slice(0,4);e.target.value=v;S.settings.pin=v.length===4?v:"";save()};
+  [["semail","email"],["spw","pw"],["spw2","pw2"]].forEach(([id,f])=>$("#"+id).oninput=e=>{SF[f]=e.target.value});
 }
 let KF=null;
 function openKid(id){const k=id&&kid(id);
@@ -936,38 +942,106 @@ document.addEventListener("click",e=>{const t=e.target.closest("[data-addkid],[d
   else if("ksport" in d){KF.sports=KF.sports.includes(d.ksport)?KF.sports.filter(x=>x!==d.ksport):[...KF.sports,d.ksport];renderKid()}
   else if("ksave" in d)saveKid();
   else if("kdel" in d){if(!KF.del){KF.del=true;renderKid();return}dropKid(KF.id)}
-  else if("setupdone" in d){if(!S.kids.length)return;const sp=$("#spin");if(sp&&sp.value&&sp.value.length!==4){toast("PIN needs 4 digits, or leave it empty");return}S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent any time for settings.")}
+  else if("setupdone" in d){if(!S.kids.length||t.disabled)return;finishSetup(t)}
+  else if("setupgo" in d){S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent any time for settings.")}
   else if("demo" in d){S=demoSeed();save();render();window.scrollTo(0,0);toast("Demo family loaded. Tap Exit demo to start your own.")}
   else if("startover" in d){if(Date.now()-eraseArmed>3000){eraseArmed=Date.now();t.textContent="Tap again to erase all kids, Stars and settings";return}
     eraseArmed=0;S=seed();save();render();window.scrollTo(0,0);toast("Everything erased. Let's set up your family.")}
 });
 $("#kidsheet").onclick=e=>{if(e.target.id==="kidsheet")closeKid()};
-/* ---------- PARENT GATE: kids can't open the Parent area without a PIN or a grown-up math question. ---------- */
+/* ---------- PARENT PASSWORD: set during family setup. Kids need it to open the Parent area.
+   Forgot password emails a reset link through Firebase Authentication (free). Paste the project's Web API key into AUTH_KEY to switch it on.
+   The password is also kept on this device as a salted hash, so the lock works offline. ---------- */
+const AUTH_KEY="";
+const authOn=()=>!!AUTH_KEY;
+async function fb(path,body){let r;try{r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${path}?key=${AUTH_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})}catch(e){throw new Error("NETWORK")}
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(((j.error&&j.error.message)||"ERROR").split(" ")[0]);return j}
+async function hashPw(pw,salt){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(salt+"|"+pw));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+async function storePw(pw){const salt=[...crypto.getRandomValues(new Uint8Array(8))].map(x=>x.toString(16).padStart(2,"0")).join("");S.settings.pw={salt,hash:await hashPw(pw,salt)}}
+async function pwMatches(pw){const p=S.settings.pw;return !!p&&(await hashPw(pw,p.salt))===p.hash}
+const okEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+const maskEmail=e=>{const [u,d]=String(e).split("@");return d?u.slice(0,1)+"•••@"+d:e};
+const pwProblem=(pw,pw2)=>pw.length<8?"Password needs 8 or more characters":pw!==pw2?"The two passwords don't match":"";
+const fbMsg=c=>({NETWORK:"Couldn't reach the internet. Check your connection and try again.",INVALID_EMAIL:"That email doesn't look right",WEAK_PASSWORD:"Please pick a longer password",TOO_MANY_ATTEMPTS_TRY_LATER:"Too many tries. Please wait a few minutes.",EMAIL_NOT_FOUND:"We couldn't find that email"})[c]||"Something went wrong ("+c+")";
+/* Links the email and password to the reset service. Returns "" or an error message. */
+async function linkAccount(email,pw){if(!authOn())return "";
+  try{await fb("signUp",{email,password:pw,returnSecureToken:true});return ""}catch(e){
+    if(e.message!=="EMAIL_EXISTS")return fbMsg(e.message);
+    try{await fb("signInWithPassword",{email,password:pw,returnSecureToken:true});return ""}catch(e2){
+      return e2.message==="NETWORK"?fbMsg("NETWORK"):"This email already has a BrightSprout password. Type that password here, or use Forgot password in the Parent area later."}}}
+let SF={email:"",pw:"",pw2:""};
+async function finishSetup(btn){const email=SF.email.trim();
+  if(!okEmail(email)){toast("Please type your email");$("#semail").focus();return}
+  const prob=pwProblem(SF.pw,SF.pw2);if(prob){toast(prob);$("#spw").focus();return}
+  btn.disabled=true;btn.textContent="Saving…";
+  const err=await linkAccount(email,SF.pw);
+  if(err){btn.disabled=false;btn.textContent="Let's go! 🚀";toast(err);return}
+  S.settings.email=email;S.settings.authLinked=authOn();await storePw(SF.pw);SF={email:"",pw:"",pw2:""};
+  S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent and use your password for settings.")}
+const signoutCard=()=>`<div class="card"><div class="row" style="gap:10px"><div class="grow"><b style="font-size:16px">👪 Signed in as parent</b><small class="note" style="display:block">${S.settings.email?esc(S.settings.email):"No email yet"}</small></div><button class="ok" data-signout>Sign out</button></div>
+    <p class="note" style="margin-top:6px">Signing out locks the Parent area and goes back to the kids' screens. Your family stays on this device.</p></div>`;
+function pwCard(){const p=!!S.settings.pw;
+  return `<div class="card"><div class="section-title"><h3>🔒 Parent password</h3><span class="tag ${p?"st-approved":""}">${p?"On":"Not set"}</span></div>
+  <p class="note" style="margin-top:6px">${p?`Kids need your password to open the Parent area. Reset email: <b>${esc(maskEmail(S.settings.email||""))}</b>${S.settings.authLinked?"":` <span class="tag">email reset not on yet</span>`}`:"Set a password so kids can't open the Parent area. For now they get a grown-up math question."}</p>
+  <div class="pwf">${p?`<label>Current password<input id="cpw" type="password" autocomplete="current-password"></label>`:`<label>Your email<input id="cemail" type="email" autocomplete="email" value="${esc(S.settings.email||"")}"></label>`}
+    <label>New password <small class="note" style="font-weight:700">(8 or more characters)</small><input id="npw" type="password" autocomplete="new-password"></label>
+    <label>Type it again<input id="npw2" type="password" autocomplete="new-password"></label>
+    <button class="ok" data-pwsave style="align-self:flex-start">${p?"Change password":"Set password"}</button></div></div>`}
+async function savePwCard(btn){const npw=$("#npw").value,prob=pwProblem(npw,$("#npw2").value);if(prob){toast(prob);return}
+  btn.disabled=true;
+  try{
+    if(S.settings.pw){const cur=$("#cpw").value;
+      if(!(await pwMatches(cur))){toast("Current password isn't right");return}
+      if(authOn()){try{const j=await fb("signInWithPassword",{email:S.settings.email,password:cur,returnSecureToken:true});await fb("update",{idToken:j.idToken,password:npw,returnSecureToken:true});S.settings.authLinked=true}
+        catch(e){const err=await linkAccount(S.settings.email,npw);if(err){toast(err);return}S.settings.authLinked=true}}
+    }else{const email=$("#cemail").value.trim();if(!okEmail(email)){toast("Please type your email");return}
+      const err=await linkAccount(email,npw);if(err){toast(err);return}S.settings.email=email;S.settings.authLinked=authOn()}
+    await storePw(npw);save();render();toast("Password saved")
+  }finally{btn.disabled=false}}
+/* Gate. Families without a password yet (and the demo family) get a grown-up math question.
+   The old 4-digit PIN is no longer offered; a PIN saved earlier still works until a password is set. */
 let GATE=null,gateOpen=false;
 const newProblem=hard=>{const r=(lo,n)=>lo+Math.floor(Math.random()*n),a=r(12,18),b=hard?r(13,17):r(6,4);return {q:`${a} × ${b}`,ans:a*b}};
-function openGate(btn){GATE={btn,mode:S.settings.pin?"pin":"math",tries:0,...newProblem()};renderGate();$("#gate").hidden=false;setTimeout(()=>{const i=$("#gin");if(i)i.focus()},50)}
+function openGate(btn){GATE={btn,mode:S.settings.pw?"pw":S.settings.pin?"pin":"math",tries:0,...newProblem()};renderGate();$("#gate").hidden=false;setTimeout(()=>{const i=$("#gin");if(i)i.focus()},50)}
 function closeGate(){$("#gate").hidden=true;GATE=null}
-function renderGate(){const pin=GATE.mode==="pin";
-  $("#gatebox").innerHTML=`<div class="row"><b class="grow" style="font-family:var(--display);font-size:20px;text-align:left">🔒 Grown-ups only</b><button class="no" data-gclose>Cancel</button></div>
-  <p class="note">${pin?"Enter your parent PIN.":"Answer this to open the Parent area."}</p>
-  ${pin?"":`<div class="gq" aria-live="polite">${GATE.q} = ?</div>`}
-  <input id="gin" type="${pin?"password":"text"}" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="${pin?"Parent PIN":"Answer"}" placeholder="${pin?"••••":""}">
+function renderGate(){const m=GATE.mode,head=`<div class="row"><b class="grow" style="font-family:var(--display);font-size:20px;text-align:left">🔒 Grown-ups only</b><button class="no" data-gclose>Cancel</button></div>`;
+  if(m==="sent"){$("#gatebox").innerHTML=head+`<div class="pwmsg">📧 We sent a reset link to <b>${esc(maskEmail(S.settings.email))}</b>. Open it, choose a new password, then come back and type the new password here.</div>
+    <input id="gin" class="pw" type="password" autocomplete="current-password" aria-label="Parent password" placeholder="New password"><button class="bigbtn" data-gok>Open Parent area</button>`;GATE.mode="pw";bindGin();GATE.mode="sent";return}
+  if(m==="newpw"){$("#gatebox").innerHTML=head+`<p class="note">Choose a new parent password.</p><div class="pwf"><input id="gnpw" type="password" autocomplete="new-password" placeholder="New password (8+ characters)" aria-label="New password"><input id="gnpw2" type="password" autocomplete="new-password" placeholder="Type it again" aria-label="Type it again"></div><button class="bigbtn" data-gnewpw>Save and open Parent area</button>`;return}
+  const pw=m==="pw",pin=m==="pin";
+  $("#gatebox").innerHTML=head+`<p class="note">${pw?"Enter your parent password.":pin?"Enter your parent PIN.":"Answer this to open the Parent area."}</p>
+  ${pw||pin?"":`<div class="gq" aria-live="polite">${GATE.q} = ?</div>`}
+  <input id="gin" ${pw?`class="pw" type="password" autocomplete="current-password" aria-label="Parent password" placeholder="Password"`:`type="${pin?"password":"text"}" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="${pin?"Parent PIN":"Answer"}" placeholder="${pin?"••••":""}"`}>
   <button class="bigbtn" data-gok>Open Parent area</button>
-  ${pin?`<button class="linkbtn" data-gforgot>Forgot PIN?</button>`:""}`;
-  const i=$("#gin");i.onkeydown=e=>{if(e.key==="Enter")checkGate()};i.oninput=()=>{i.value=i.value.replace(/\D/g,"");if(pin&&i.value.length===4)checkGate()}}
-function checkGate(){const v=$("#gin").value.trim();if(!v)return;
-  const ok=GATE.mode==="pin"?v===S.settings.pin:+v===GATE.ans;
-  if(ok){const b=GATE.btn;closeGate();gateOpen=true;b.click();gateOpen=false;return}
-  GATE.tries++;Object.assign(GATE,newProblem(GATE.hard));renderGate();toast(GATE.mode==="pin"?"That PIN isn't right":"Not quite. Try this one.");setTimeout(()=>{const i=$("#gin");if(i)i.focus()},30)}
+  ${pw||pin?`<button class="linkbtn" data-gforgot>Forgot ${pw?"password":"PIN"}?</button>`:""}`;bindGin()}
+function bindGin(){const i=$("#gin"),m=GATE.mode;i.onkeydown=e=>{if(e.key==="Enter")checkGate()};if(m!=="pw")i.oninput=()=>{i.value=i.value.replace(/\D/g,"");if(m==="pin"&&i.value.length===4)checkGate()}}
+function passGate(){const b=GATE.btn;closeGate();gateOpen=true;b.click();gateOpen=false}
+async function checkGate(){const v=$("#gin").value;if(!v.trim())return;const m=GATE.mode;
+  if(m==="pw"||m==="sent"){
+    if(await pwMatches(v)){passGate();if(authOn()&&!S.settings.authLinked&&S.settings.email)linkAccount(S.settings.email,v).then(err=>{if(!err){S.settings.authLinked=true;save()}});return}
+    if(authOn()&&S.settings.authLinked&&S.settings.email){try{await fb("signInWithPassword",{email:S.settings.email,password:v,returnSecureToken:true});await storePw(v);save();passGate();toast("New password saved on this device");return}catch(e){if(e.message==="NETWORK"){toast(fbMsg("NETWORK"));return}}}
+    toast("That password isn't right");$("#gin").value="";$("#gin").focus();return}
+  const ok=m==="pin"?v===S.settings.pin:+v===GATE.ans;
+  if(ok){if(GATE.hard){GATE.mode="newpw";renderGate();return}passGate();return}
+  GATE.tries++;Object.assign(GATE,newProblem(GATE.hard));renderGate();toast(m==="pin"?"That PIN isn't right":"Not quite. Try this one.");setTimeout(()=>{const i=$("#gin");if(i)i.focus()},30)}
+async function forgotPw(btn){
+  if(GATE.mode==="pw"&&authOn()&&S.settings.authLinked&&S.settings.email){btn.disabled=true;
+    try{await fb("sendOobCode",{requestType:"PASSWORD_RESET",email:S.settings.email});GATE.mode="sent";renderGate()}catch(e){btn.disabled=false;toast(fbMsg(e.message))}return}
+  /* Email reset isn't switched on for this family yet: fall back to a harder grown-up question, then set a new password. */
+  GATE.mode="math";GATE.hard=true;Object.assign(GATE,newProblem(true));renderGate();toast("Answer this, then choose a new password")}
+async function gateNewPw(btn){const pw=$("#gnpw").value,prob=pwProblem(pw,$("#gnpw2").value);if(prob){toast(prob);return}
+  btn.disabled=true;if(authOn()&&S.settings.email){const err=await linkAccount(S.settings.email,pw);S.settings.authLinked=!err}
+  await storePw(pw);delete S.settings.pin;save();passGate();toast("New password saved")}
 document.addEventListener("click",e=>{const b=e.target.closest("[data-who=parent]");
   if(!b||gateOpen||S.who==="parent"||(typeof NATIVE!=="undefined"&&NATIVE))return;
   e.stopPropagation();e.preventDefault();openGate(b)},true);
-document.addEventListener("click",e=>{const t=e.target.closest("[data-gclose],[data-gok],[data-gforgot],[data-pinsave],[data-pinoff]");if(!t)return;const d=t.dataset;
+document.addEventListener("click",e=>{const t=e.target.closest("[data-gclose],[data-gok],[data-gforgot],[data-gnewpw],[data-pwsave],[data-signout]");if(!t)return;const d=t.dataset;
+  if("signout" in d){S.who=S.kids[0].id;S.tab="today";S.filter="all";save();render();window.scrollTo(0,0);toast("Signed out. The Parent area is locked.");return}
   if("gclose" in d)closeGate();
   else if("gok" in d)checkGate();
-  else if("gforgot" in d){GATE.mode="math";GATE.hard=true;Object.assign(GATE,newProblem(true));renderGate();toast("Answer this, then set a new PIN in Settings")}
-  else if("pinsave" in d){const v=$("#setpin").value.replace(/\D/g,"");if(v.length!==4){toast("PIN needs exactly 4 digits");return}S.settings.pin=v;save();render();toast("Parent PIN saved")}
-  else if("pinoff" in d){S.settings.pin="";save();render();toast("PIN removed. Kids get a math question instead.")}
+  else if("gforgot" in d)forgotPw(t);
+  else if("gnewpw" in d)gateNewPw(t);
+  else if("pwsave" in d)savePwCard(t);
 });
 $("#gate").onclick=e=>{if(e.target.id==="gate")closeGate()};
 /* ---------- SCREEN TIME LINK (optional, parent-controlled). Prototype simulates usage; a real iPhone app would use Apple's Screen Time API. ---------- */
@@ -1134,6 +1208,7 @@ function viewVideos(){
 }
 function viewSettings(){
   return `<div><h2 style="font-size:24px">Settings</h2><p class="note">Only parents can see and change these.</p></div>
+  ${signoutCard()}
   <div class="card"><div class="section-title"><h3>👧 Our kids</h3><span>${S.kids.length}</span></div>
     <div style="margin-top:6px">${S.kids.map(kidRow).join("")}</div>
     <button class="addbtn" data-addkid style="margin-top:10px">＋ Add a child</button></div>
@@ -1162,10 +1237,7 @@ function viewSettings(){
         ${proofOn()?"":`<p class="note">With no options picked, kids just tap Done like before.</p>`}</div>`:""}
       <label class="tgl"><input type="checkbox" id="setdel" ${S.settings.autoDelete?"checked":""}><span>Delete each clip as soon as I approve it</span></label>
     </div></div>
-  <div class="card"><div class="section-title"><h3>🔒 Parent lock</h3><span class="tag st-approved">On</span></div>
-    <p class="note" style="margin-top:6px">${S.settings.pin?"Kids need your 4-digit PIN to open the Parent area.":"Kids must answer a grown-up math question to open the Parent area. Add a PIN to make it stronger."}</p>
-    <div class="row" style="margin-top:10px;gap:8px;flex-wrap:wrap"><input class="pinin" id="setpin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" aria-label="New 4-digit PIN"><button class="ok" data-pinsave>${S.settings.pin?"Change PIN":"Set PIN"}</button>${S.settings.pin?`<button class="no" data-pinoff>Remove PIN</button>`:""}</div>
-    <p class="demo" style="margin-top:8px;text-align:left">The PIN is saved only on this device. This is a tryout lock, not bank-level security.</p></div>
+${pwCard()}
   <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. Everything is saved only on this device.</p>
     <button class="no" data-startover style="margin-top:10px;color:var(--berry)">Erase everything and start over</button></div>`;
 }
