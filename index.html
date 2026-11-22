@@ -1042,7 +1042,7 @@ function viewApprove(){
   <div class="card"><div class="section-title"><h3>Activities</h3><span>${items.length} waiting</span></div>
     <div class="list">${items.length?items.map(([id,aid])=>{const k=kid(id),a=actById(aid);return `<div class="appr"><div class="ic p-${a.p}" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;flex:none" aria-hidden="true">${a.icon}</div>
       <div class="grow"><div class="who">${k.av} ${k.name}</div><b style="font-size:15px">${esc(a.t)}</b></div>
-      <button class="no" data-deny="${id}|${aid}">Not yet</button><button class="ok" data-approve="${id}|${aid}">+${Math.round(a.s*mult(k))} ⭐</button></div>${proofView(id,aid)}`}).join(""):`<p class="empty">All caught up. Switch to Mia or Leo and tap Done on a quest to see it here.</p>`}</div></div>
+      <button class="no" data-deny="${id}|${aid}">Not yet</button><button class="ok" data-approve="${id}|${aid}">+${Math.round(a.s*mult(k))} ⭐</button></div>${proofView(id,aid)}`}).join(""):`<p class="empty">All caught up. When ${S.kids.length>1?S.kids.slice(0,-1).map(k=>esc(k.name)).join(", ")+" or "+esc(S.kids[S.kids.length-1].name):esc(S.kids[0].name)} taps Done on a quest, it shows up here for you to approve.</p>`}</div></div>
   ${(()=>{const hws=(S.homework||[]).filter(h=>h.state==="pending");return `<div class="card"><div class="section-title"><h3>Homework</h3><span>${hws.length} waiting</span></div>
     <div class="list">${hws.length?hws.map(h=>{const k=kid(h.kid);return `<div class="appr"><span style="font-size:26px" aria-hidden="true">${HW_SUBJ[h.subj]||"📄"}</span>
       <div class="grow"><div class="who">${k.av} ${k.name} · ${esc(h.subj)}</div><b style="font-size:15px">${esc(h.t)}</b></div>
@@ -1124,7 +1124,7 @@ function viewRewards(){
     <p class="note" style="margin-top:4px">${esc(S.goal.t)}</p><div class="bar sky" style="margin-top:10px"><i style="width:${S.goal.have/S.goal.target*100}%"></i></div></div>`;
 }
 function viewFamily(){
-  return `<div><h2 style="font-size:24px">This week</h2><p class="note">Sample weekly summary. In the real app this arrives every Sunday.</p></div>
+  return `<div><h2 style="font-size:24px">This week</h2><p class="note">${S.demo?"Sample weekly summary. ":""}Stars earned this week in each area. In the real app this arrives every Sunday.</p></div>
   <div class="card">${S.kids.map(k=>{const max=Math.max(1,...Object.values(k.pillar));return `<div class="kidsum">
     <div class="row"><span style="font-size:26px" aria-hidden="true">${k.av}</span><div class="grow"><b>${k.name}, ${k.age}</b> <span class="tag">${BANDS[k.band].name}</span></div><span class="cost">${k.stars} ⭐</span></div>
     ${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}
