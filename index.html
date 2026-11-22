@@ -371,7 +371,7 @@ const REWARDS0=()=>[
       {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}];
 const SETTINGS0=lim=>({proof:false,autoDelete:true,opts:{video:true,photo:true,saw:true},screen:{on:false,limits:lim||{}},state:"New York"});
 function seed(){
-  return {who:"parent",tab:"approve",filter:"all",setup:true,demo:false,kids:[],today:{},rewards:REWARDS0(),requests:[],homework:[],goals:[],
+  return {who:"parent",tab:"approve",filter:"all",setup:true,welcome:true,demo:false,kids:[],today:{},rewards:REWARDS0(),requests:[],homework:[],goals:[],
     goal:{t:"Family adventure day",target:500,have:0},settings:SETTINGS0()};
 }
 function demoSeed(){
@@ -534,6 +534,7 @@ function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[i
 function render(){
   $("#reset").hidden=!S.demo;
   if(S.setup||!S.kids.length){renderSetup();return}
+  if(S.signedOut){renderSignin();return}
   syncKids();
   // profiles
   const P=$("#profiles");
@@ -880,7 +881,7 @@ const ageGrade=a=>Math.max(-1,Math.min(9,a-5));
 const cleanName=t=>String(t||"").replace(/[<>&"'`\\]/g,"").replace(/\s+/g," ").trim().slice(0,20);
 function syncKids(){document.querySelector("nav").hidden=false;$("#profiles").hidden=false;S.kids.forEach(k=>{if(k.color)KC[k.id]=k.color;S.today[k.id]=S.today[k.id]||{}});if(S.who!=="parent"&&!kid(S.who))S.who=S.kids[0].id}
 const kidRow=k=>`<div class="kidrow"><span class="kav" style="background:${KC[k.id]||k.color||"var(--surface-2)"}33">${k.av}</span><div class="grow"><b>${esc(k.name)}</b><small>Age ${k.age} · ${GRADE_NAMES[gradeOf(k)]}${k.sports.length?" · "+k.sports.map(x=>SPORTS[x]?SPORTS[x].i:"").join(""):""}</small></div><button class="no" data-editkid="${k.id}">Edit</button></div>`;
-function renderSetup(){
+function renderSetup(){if(S.welcome&&!S.kids.length){renderWelcome();return}
   document.querySelector("nav").hidden=true;$("#profiles").hidden=true;document.body.classList.remove("kidmode");document.body.style.setProperty("--kc","var(--leaf)");
   S.kids.forEach(k=>{if(k.color)KC[k.id]=k.color});
   $("#main").innerHTML=`<div class="setup">
@@ -978,8 +979,12 @@ async function finishSetup(btn){const email=SF.email.trim();
   if(err){btn.disabled=false;btn.textContent="Let's go! 🚀";toast(err);return}
   S.settings.email=email;S.settings.authLinked=authOn();await storePw(SF.pw);SF={email:"",pw:"",pw2:""};
   S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent and use your password for settings.")}
-const signoutCard=()=>`<div class="card"><div class="row" style="gap:10px"><div class="grow"><b style="font-size:16px">👪 Signed in as parent</b><small class="note" style="display:block">${S.settings.email?esc(S.settings.email):"No email yet"}</small></div><button class="ok" data-signout>Sign out</button></div>
-    <p class="note" style="margin-top:6px">Signing out locks the Parent area and goes back to the kids' screens. Your family stays on this device.</p></div>`;
+const signoutCard=()=>`<div class="card"><div class="row" style="gap:10px;flex-wrap:wrap"><div class="grow"><b style="font-size:16px">👪 Signed in</b><small class="note" style="display:block">${S.settings.email?esc(S.settings.email):"No email yet"}</small></div>
+    <button class="no" data-lockparent>Lock Parent area</button>${S.settings.pw?`<button class="ok" data-signout>Sign out</button>`:""}</div>
+    <p class="note" style="margin-top:6px">${S.settings.pw?"<b>Lock</b> goes back to the kids' screens. <b>Sign out</b> closes the app for everyone until you sign in again with your email and password. Your family's Stars and settings stay saved on this device.":"Lock goes back to the kids' screens. Set a password below to be able to sign out."}</p></div>
+  ${S.settings.pw?`<div class="card"><h3 style="font-size:18px">📧 Change email</h3><p class="note" style="margin-top:6px">Password reset emails go to <b>${esc(S.settings.email)}</b>.${S.settings.pendingEmail?` Waiting for you to confirm <b>${esc(S.settings.pendingEmail)}</b> from that inbox.`:""}</p>
+    <div class="pwf"><label>New email<input id="nemail" type="email" autocomplete="email" inputmode="email"></label><label>Your password<input id="epw" type="password" autocomplete="current-password"></label>
+    <button class="ok" data-emailsave style="align-self:flex-start">Change email</button></div></div>`:""}`;
 function pwCard(){const p=!!S.settings.pw;
   return `<div class="card"><div class="section-title"><h3>🔒 Parent password</h3><span class="tag ${p?"st-approved":""}">${p?"On":"Not set"}</span></div>
   <p class="note" style="margin-top:6px">${p?`Kids need your password to open the Parent area. Reset email: <b>${esc(maskEmail(S.settings.email||""))}</b>${S.settings.authLinked?"":` <span class="tag">email reset not on yet</span>`}`:"Set a password so kids can't open the Parent area. For now they get a grown-up math question."}</p>
@@ -998,6 +1003,44 @@ async function savePwCard(btn){const npw=$("#npw").value,prob=pwProblem(npw,$("#
       const err=await linkAccount(email,npw);if(err){toast(err);return}S.settings.email=email;S.settings.authLinked=authOn()}
     await storePw(npw);save();render();toast("Password saved")
   }finally{btn.disabled=false}}
+/* Signs in to the reset service with the saved email, or a new email waiting for confirmation. Returns idToken or throws. */
+async function fbSignIn(pw){let last;for(const em of [S.settings.email,S.settings.pendingEmail].filter(Boolean)){
+  try{const j=await fb("signInWithPassword",{email:em,password:pw,returnSecureToken:true});if(em!==S.settings.email){S.settings.email=em;delete S.settings.pendingEmail;save()}return j.idToken}catch(e){last=e;if(e.message==="NETWORK")throw e}}throw last||new Error("NO_EMAIL")}
+async function checkPw(pw){if(await pwMatches(pw))return true;
+  if(authOn()&&S.settings.authLinked){try{await fbSignIn(pw);await storePw(pw);save();return true}catch(e){if(e.message==="NETWORK")toast(fbMsg("NETWORK"))}}return false}
+const sameEmail=(a,b)=>String(a||"").trim().toLowerCase()===String(b||"").trim().toLowerCase();
+const appleBtn=()=>`<button class="bigbtn" disabled style="background:#000;color:#fff;margin-top:8px" aria-label="Sign in with Apple, coming soon"> Sign in with Apple · coming soon</button>`;
+function renderWelcome(){document.querySelector("nav").hidden=true;$("#profiles").hidden=true;document.body.classList.remove("kidmode");document.body.style.setProperty("--kc","var(--leaf)");$("#tabs").innerHTML="";
+  $("#main").innerHTML=`<div class="setup">
+  <div class="hero" style="--kc:var(--leaf)"><div class="hero-txt"><span class="eyebrow">Welcome to ${APP_NAME}</span><h2>${SLOGAN}</h2><p>Kids earn Stars for healthy habits. A parent signs up first.</p></div><span class="hero-art" aria-hidden="true">🌱</span></div>
+  <div class="card"><button class="bigbtn" data-wsignup>📧 Sign up with email</button>${appleBtn()}
+    <button class="linkbtn" data-whave style="display:block;margin:10px auto 0">Already have an account?</button>
+    ${S.wHave?`<div class="pwmsg" style="margin-top:8px">Your family is saved on the phone where you set it up. Open ${APP_NAME} there and sign in. Moving a family to a new phone comes with the full app.</div>`:""}</div>
+  <button class="linkbtn" data-demo>Just looking? Try the demo family</button></div>`}
+function renderSignin(){document.querySelector("nav").hidden=true;$("#profiles").hidden=true;document.body.classList.remove("kidmode");document.body.style.setProperty("--kc","var(--leaf)");$("#tabs").innerHTML="";
+  $("#main").innerHTML=`<div class="setup">
+  <div class="hero" style="--kc:var(--leaf)"><div class="hero-txt"><span class="eyebrow">Signed out</span><h2>Welcome back!</h2><p>A parent needs to sign in to start ${APP_NAME}.</p></div><span class="hero-art" aria-hidden="true">🌱</span></div>
+  <div class="card"><div class="pwf" style="margin-top:0"><label>Email<input id="iemail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>
+    <label>Password<input id="ipw" type="password" autocomplete="current-password"></label></div>
+    <button class="bigbtn" data-signin style="margin-top:12px">Sign in</button>
+    <button class="linkbtn" data-siforgot style="display:block;margin:8px auto 0">Forgot password?</button>${appleBtn()}</div>
+  <p class="note" style="text-align:center">Your family (${S.kids.map(k=>k.av).join(" ")}) is saved on this device and comes back when you sign in.</p>
+  <button class="linkbtn" data-sinew>Not your family? Start a new one on this device</button></div>`;
+  $("#ipw").onkeydown=e=>{if(e.key==="Enter")doSignin($("[data-signin]"))}}
+function signedIn(){S.signedOut=false;S.who="parent";S.tab="approve";save();render();window.scrollTo(0,0);toast("Welcome back!")}
+async function doSignin(btn){const em=$("#iemail").value,pw=$("#ipw").value;
+  if(!sameEmail(em,S.settings.email)&&!sameEmail(em,S.settings.pendingEmail)){toast("That email doesn't match this family");return}
+  if(!pw){toast("Please type your password");return}
+  btn.disabled=true;const ok=await checkPw(pw);btn.disabled=false;
+  if(ok){if(sameEmail(em,S.settings.pendingEmail)){if(!authOn()){S.settings.email=S.settings.pendingEmail;delete S.settings.pendingEmail}else try{await fb("signInWithPassword",{email:S.settings.pendingEmail,password:pw,returnSecureToken:true});S.settings.email=S.settings.pendingEmail;delete S.settings.pendingEmail}catch(e){}}signedIn()}else{toast("That password isn't right");$("#ipw").value="";$("#ipw").focus()}}
+async function saveEmail(btn){const em=$("#nemail").value.trim(),pw=$("#epw").value;
+  if(!okEmail(em)){toast("Please type the new email");return}if(sameEmail(em,S.settings.email)){toast("That's already your email");return}
+  btn.disabled=true;
+  try{if(!(await pwMatches(pw))){toast("Password isn't right");return}
+    if(authOn()&&S.settings.authLinked){const tok=await fbSignIn(pw);await fb("sendOobCode",{requestType:"VERIFY_AND_CHANGE_EMAIL",idToken:tok,newEmail:em});
+      S.settings.pendingEmail=em;save();render();toast("Check "+em+" and tap the link to confirm")}
+    else{S.settings.email=em;delete S.settings.pendingEmail;if(authOn()){const err=await linkAccount(em,pw);S.settings.authLinked=!err}save();render();toast("Email changed")}
+  }catch(e){toast(fbMsg(e.message))}finally{btn.disabled=false}}
 /* Gate. Families without a password yet (and the demo family) get a grown-up math question.
    The old 4-digit PIN is no longer offered; a PIN saved earlier still works until a password is set. */
 let GATE=null,gateOpen=false;
@@ -1015,18 +1058,18 @@ function renderGate(){const m=GATE.mode,head=`<div class="row"><b class="grow" s
   <button class="bigbtn" data-gok>Open Parent area</button>
   ${pw||pin?`<button class="linkbtn" data-gforgot>Forgot ${pw?"password":"PIN"}?</button>`:""}`;bindGin()}
 function bindGin(){const i=$("#gin"),m=GATE.mode;i.onkeydown=e=>{if(e.key==="Enter")checkGate()};if(m!=="pw")i.oninput=()=>{i.value=i.value.replace(/\D/g,"");if(m==="pin"&&i.value.length===4)checkGate()}}
-function passGate(){const b=GATE.btn;closeGate();gateOpen=true;b.click();gateOpen=false}
+function passGate(){const b=GATE.btn,f=GATE.onPass;closeGate();if(f){f();return}gateOpen=true;b.click();gateOpen=false}
 async function checkGate(){const v=$("#gin").value;if(!v.trim())return;const m=GATE.mode;
   if(m==="pw"||m==="sent"){
     if(await pwMatches(v)){passGate();if(authOn()&&!S.settings.authLinked&&S.settings.email)linkAccount(S.settings.email,v).then(err=>{if(!err){S.settings.authLinked=true;save()}});return}
-    if(authOn()&&S.settings.authLinked&&S.settings.email){try{await fb("signInWithPassword",{email:S.settings.email,password:v,returnSecureToken:true});await storePw(v);save();passGate();toast("New password saved on this device");return}catch(e){if(e.message==="NETWORK"){toast(fbMsg("NETWORK"));return}}}
+    if(authOn()&&S.settings.authLinked&&S.settings.email){try{await fbSignIn(v);await storePw(v);save();passGate();toast("New password saved on this device");return}catch(e){if(e.message==="NETWORK"){toast(fbMsg("NETWORK"));return}}}
     toast("That password isn't right");$("#gin").value="";$("#gin").focus();return}
   const ok=m==="pin"?v===S.settings.pin:+v===GATE.ans;
   if(ok){if(GATE.hard){GATE.mode="newpw";renderGate();return}passGate();return}
   GATE.tries++;Object.assign(GATE,newProblem(GATE.hard));renderGate();toast(m==="pin"?"That PIN isn't right":"Not quite. Try this one.");setTimeout(()=>{const i=$("#gin");if(i)i.focus()},30)}
 async function forgotPw(btn){
   if(GATE.mode==="pw"&&authOn()&&S.settings.authLinked&&S.settings.email){btn.disabled=true;
-    try{await fb("sendOobCode",{requestType:"PASSWORD_RESET",email:S.settings.email});GATE.mode="sent";renderGate()}catch(e){btn.disabled=false;toast(fbMsg(e.message))}return}
+    try{try{await fb("sendOobCode",{requestType:"PASSWORD_RESET",email:S.settings.email})}catch(e){if(e.message!=="EMAIL_NOT_FOUND"||!S.settings.pendingEmail)throw e;await fb("sendOobCode",{requestType:"PASSWORD_RESET",email:S.settings.pendingEmail});S.settings.email=S.settings.pendingEmail;delete S.settings.pendingEmail;save()}GATE.mode="sent";renderGate()}catch(e){btn.disabled=false;toast(fbMsg(e.message))}return}
   /* Email reset isn't switched on for this family yet: fall back to a harder grown-up question, then set a new password. */
   GATE.mode="math";GATE.hard=true;Object.assign(GATE,newProblem(true));renderGate();toast("Answer this, then choose a new password")}
 async function gateNewPw(btn){const pw=$("#gnpw").value,prob=pwProblem(pw,$("#gnpw2").value);if(prob){toast(prob);return}
@@ -1035,8 +1078,16 @@ async function gateNewPw(btn){const pw=$("#gnpw").value,prob=pwProblem(pw,$("#gn
 document.addEventListener("click",e=>{const b=e.target.closest("[data-who=parent]");
   if(!b||gateOpen||S.who==="parent"||(typeof NATIVE!=="undefined"&&NATIVE))return;
   e.stopPropagation();e.preventDefault();openGate(b)},true);
-document.addEventListener("click",e=>{const t=e.target.closest("[data-gclose],[data-gok],[data-gforgot],[data-gnewpw],[data-pwsave],[data-signout]");if(!t)return;const d=t.dataset;
-  if("signout" in d){S.who=S.kids[0].id;S.tab="today";S.filter="all";save();render();window.scrollTo(0,0);toast("Signed out. The Parent area is locked.");return}
+let newArmed=0;
+document.addEventListener("click",e=>{const t=e.target.closest("[data-gclose],[data-gok],[data-gforgot],[data-gnewpw],[data-pwsave],[data-signout],[data-lockparent],[data-emailsave],[data-signin],[data-siforgot],[data-sinew],[data-wsignup],[data-whave]");if(!t)return;const d=t.dataset;
+  if("wsignup" in d){S.welcome=false;delete S.wHave;save();render();window.scrollTo(0,0);return}
+  if("whave" in d){S.wHave=!S.wHave;render();return}
+  if("lockparent" in d){S.who=S.kids[0].id;S.tab="today";S.filter="all";save();render();window.scrollTo(0,0);toast("Parent area locked");return}
+  if("signout" in d){S.signedOut=true;S.who=S.kids[0].id;S.tab="today";S.filter="all";save();render();window.scrollTo(0,0);toast("Signed out");return}
+  if("emailsave" in d){saveEmail(t);return}
+  if("signin" in d){doSignin(t);return}
+  if("siforgot" in d){GATE={btn:null,onPass:signedIn,mode:"pw",tries:0,...newProblem()};$("#gate").hidden=false;forgotPw(t);return}
+  if("sinew" in d){if(Date.now()-newArmed>3000){newArmed=Date.now();t.textContent="Tap again to erase this family and start new";return}S=seed();save();render();window.scrollTo(0,0);toast("Let's set up your family");return}
   if("gclose" in d)closeGate();
   else if("gok" in d)checkGate();
   else if("gforgot" in d)forgotPw(t);
