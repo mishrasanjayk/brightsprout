@@ -137,7 +137,7 @@ nav button{padding:10px 4px 12px;display:flex;flex-direction:column;align-items:
 nav button .i{font-size:22px;line-height:1}
 nav button[aria-current="page"]{color:var(--leaf)}
 nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18px;border-radius:999px;background:var(--berry);color:#fff;font-size:11px;display:grid;place-items:center;padding:0 4px}
-.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:800;font-size:14px;transition:.25s;z-index:20;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:800;font-size:14px;transition:.25s;z-index:60;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .burst{position:fixed;pointer-events:none;z-index:30;font-size:22px;animation:fly .9s ease-out forwards}
 @keyframes fly{from{transform:translate(0,0) scale(.6);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0}}
@@ -217,6 +217,22 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .party .pi{font-size:72px;line-height:1}.party b{font-family:var(--display);font-size:28px;font-weight:600}.party small{font-weight:800;color:var(--star);font-size:18px}
 @keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
 @media (prefers-reduced-motion: reduce){.hero-av,.hero-art{animation:none}.party>div{animation:none}}
+.sproutcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:2px solid var(--leaf);background:var(--surface)}
+.sproutcard b{display:block;font-family:var(--display);font-size:18px;font-weight:600}.sproutcard small{color:var(--muted);font-weight:700;font-size:13px}
+.sproutcard.off{border-style:dashed;border-color:var(--line)}
+.askfab{position:fixed;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--leaf);color:var(--leaf-ink);font-weight:800;font-size:15px;padding:12px 16px;border-radius:999px;box-shadow:0 4px 0 rgba(0,0,0,.2),0 6px 18px rgba(0,0,0,.18)}
+.chat-in{height:min(88vh,720px);display:flex;flex-direction:column;gap:10px}
+.chat-h{flex:none}
+.msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px}
+.msgs.small{max-height:300px;flex:none;margin:8px 0}
+.msg{max-width:85%;padding:10px 12px;border-radius:18px;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg small{display:block;font-size:10px;opacity:.7;font-weight:700;margin-bottom:2px}
+.msg.bot{align-self:flex-start;background:var(--surface-2);border-bottom-left-radius:4px}
+.msg.me{align-self:flex-end;background:var(--leaf);color:var(--leaf-ink);border-bottom-right-radius:4px}
+.msg.typing{opacity:.85}
+.chips{display:flex;gap:6px;flex-wrap:wrap;flex:none}
+.warnbox{background:var(--sun-soft);padding:12px;border-radius:14px;color:var(--ink)}
+.chist summary{cursor:pointer;font-weight:800;padding:6px 0}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
 </style>
 
@@ -249,6 +265,7 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
     </div>
   </div>
 </div>
+<div class="sheet" id="chat" hidden role="dialog" aria-modal="true" aria-label="Chat with Sprout"><div class="sheet-in chat-in"></div></div>
 <div class="party" id="party" hidden aria-live="polite"><div><span class="pi"></span><b></b><small></small></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -446,7 +463,7 @@ function render(){
   $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();window.scrollTo(0,0)});
   const M=$("#main");
   if(isParent){M.innerHTML=({approve:viewApprove,videos:viewVideos,rewards:viewRewards,family:viewFamily,settings:viewSettings})[S.tab]();bindParent()}
-  else{const k=kid(S.who);M.innerHTML=({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
+  else{const k=kid(S.who);M.innerHTML=(S.settings.ai?`<button class="askfab" data-askspr aria-label="Ask Sprout">🌱 Ask Sprout</button>`:"")+({today:viewToday,learn:viewLearn,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
 }
 
 /* ---------- TODAY'S CHALLENGE: watch & try, learning quiz, food quiz ---------- */
@@ -671,6 +688,7 @@ function viewLearn(k){
   if(QZ&&QZ.kid===k.id&&QZ.where==="learn")return quizPanel(k);
   const hw=(S.homework||[]).filter(h=>h.kid===k.id&&h.state!=="done-old");
   return `<div class="hero" style="--kc:${KC[k.id]||"var(--leaf)"}"><div class="hero-txt"><span class="eyebrow">${GRADE_NAMES[g]} · ${esc(S.settings.state)}</span><h2>Learn and earn!</h2><p>Every right answer = 5 ⭐. Get them all right for a bonus!</p></div><span class="hero-art" aria-hidden="true">🧠</span></div>
+  ${sproutCard(k)}
   <div class="subjects">${subjFor(k).map(s=>{const sj=SUBJ[s];return `<button class="subj" style="--sc:${sj.c}" data-subj="${s}"><span class="si" aria-hidden="true">${sj.i}</span><b>${sj.n}</b><small>${ed[s]!==undefined?`Best: ${ed[s]}/5`:"5 questions"}</small></button>`}).join("")}</div>
   <p class="demo" style="margin-top:-4px">Math questions are made fresh every time for ${GRADE_NAMES[g]}. A parent can change the grade or state in Settings.</p>
   ${k.band==="sprout"?"":`<div class="card hwcard"><div class="section-title"><h3>📒 My homework</h3><span>+20 ⭐ each</span></div>
@@ -685,6 +703,85 @@ function bindLearn(k){
   document.querySelectorAll("[data-hwdone]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwdone);
     if(proofOn()){openProof(k,{icon:HW_SUBJ[h.subj],t:h.t,hw:h});return}
     h.state="pending";burst(b);toast("Sent to a parent for Stars!");save();render()});
+}
+
+/* ---------- SPROUT: AI study buddy (Claude via the artifact's sample capability) ---------- */
+const SAMPLE_P=(window.claude&&claude.use)?claude.use("sample").catch(()=>null):Promise.resolve(null);
+let SAMPLE=undefined;SAMPLE_P.then(s=>{SAMPLE=s;if(!$("#chat").hidden)renderChat()});
+let CHAT=null; // {kid, busy, ctl, mode}
+function sproutRules(k){const g=gradeOf(k);return `You are Sprout, a cheerful, patient study buddy inside BrightSprout, a healthy-habits app for kids. You are talking with ${k.name}, who is ${k.age} years old and in ${GRADE_NAMES[g]} in ${S.settings.state}, USA.
+Rules you must always follow:
+- Use words a ${k.age}-year-old understands. ${k.age<=6?"Use 1 to 3 very short sentences.":k.age<=9?"Keep answers under 5 short sentences.":"Keep answers short and clear, under 8 sentences unless asked for more."} Be warm and encouraging. You may use one emoji.
+- Teach to US school standards for ${GRADE_NAMES[g]} (Common Core math, NGSS science, US social studies).
+- Homework: never just give the final answer. Ask what they already know, give one hint or step at a time, and let them try. Check their answer and praise effort.
+- Only talk about age-appropriate topics: school subjects, general knowledge, health, sports, hobbies, nature, kindness. If asked about violence, weapons, sexual topics, drugs, alcohol, scary or adult content, gently say that's a question for a parent or trusted grown-up and suggest a fun learning topic instead.
+- If ${k.name} seems sad, scared, hurt, bullied or unsafe, be kind, tell them to talk to a parent, teacher or trusted adult right away, and if they are in danger to call 911.
+- Never ask for or repeat personal information (full name, address, school name, phone, email, passwords, photos). If they share it, remind them to keep it private.
+- Do not pretend to be a person. You are an AI helper. Do not give medical advice beyond simple healthy-habit tips.
+- If you don't know or aren't sure, say so.`}
+const PII=/(\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b)|([\w.+-]+@[\w-]+\.[\w.]+)|(\b\d{1,5}\s+\w+\s+(street|st|avenue|ave|road|rd|lane|ln|drive|dr)\b)/i;
+function chatLog(k){S.chats=S.chats||{};return S.chats[k.id]=S.chats[k.id]||[]}
+function openChat(k){CHAT={kid:k.id,busy:false,mode:null};$("#chat").hidden=false;renderChat();setTimeout(()=>{const i=$("#cin");if(i)i.focus()},50)}
+function closeChat(){if(CHAT&&CHAT.ctl)CHAT.ctl.abort();CHAT=null;$("#chat").hidden=true}
+function renderChat(){
+  if(!CHAT)return;const k=kid(CHAT.kid),log=chatLog(k),box=$("#chat .sheet-in");
+  const unavailable=SAMPLE===null;
+  box.innerHTML=`<div class="row chat-h"><span class="tip-m" aria-hidden="true">🌱</span><div class="grow"><b style="font-family:var(--display);font-size:19px">Sprout</b><small class="note" style="display:block">Your AI study buddy · ${GRADE_NAMES[gradeOf(k)]}</small></div><button class="no" id="cclose">Close</button></div>
+  <div class="msgs" id="msgs">${log.length?"":`<div class="msg bot">Hi ${esc(k.name)}! 🌱 I'm Sprout. Ask me anything you're curious about, or tap a button below. I can help with homework, make quizzes and practice tests!</div>`}
+    ${log.slice(-40).map(m=>`<div class="msg ${m.role==="user"?"me":"bot"}">${esc(m.content)}</div>`).join("")}
+    ${CHAT.busy?`<div class="msg bot typing" id="live">${CHAT.live?esc(CHAT.live):"Sprout is thinking…"}</div>`:""}</div>
+  ${unavailable?`<p class="note warnbox">Sprout needs the Claude version of the app to think. Open the Claude preview link to chat with Sprout. In the real app, Sprout runs through BrightSprout's own secure server.</p>`:
+  CHAT.mode?`<form class="addform" id="cmode"><input id="ctopic" placeholder="${CHAT.mode==="hw"?"What's the homework question?":"Topic, e.g. fractions, planets, US presidents"}" maxlength="200" required><button class="ok" type="submit">${CHAT.mode==="hw"?"Help me":"Make it"}</button><button class="no" type="button" id="cmodex">Back</button></form>`:
+  `<div class="chips">${[["hw","📒 Help with homework"],["quiz","🧩 Quiz me"],["test","📝 Practice test"],["fact","💡 Fun fact"]].map(([m,l])=>`<button class="pfilter" data-cm="${m}" ${CHAT.busy?"disabled":""}>${l}</button>`).join("")}</div>
+  <form class="addform" id="cform"><input id="cin" placeholder="Ask Sprout a question…" maxlength="300" autocomplete="off" ${CHAT.busy?"disabled":""}><button class="ok" type="submit" ${CHAT.busy?"disabled":""}>Send</button>${CHAT.busy?`<button class="no" type="button" id="cstop">Stop</button>`:""}</form>`}
+  <p class="demo" style="margin-top:6px">Sprout is an AI and can make mistakes. Your parents can read these chats.</p>`;
+  const m=$("#msgs");m.scrollTop=m.scrollHeight;
+  $("#cclose").onclick=closeChat;
+  const f=$("#cform");if(f)f.onsubmit=e=>{e.preventDefault();const v=$("#cin").value.trim();if(v)ask(k,v)};
+  const st=$("#cstop");if(st)st.onclick=()=>CHAT.ctl&&CHAT.ctl.abort();
+  document.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const md=b.dataset.cm;if(md==="fact"){ask(k,"Tell me one fun, true fact I can learn today.");return}CHAT.mode=md;renderChat();$("#ctopic").focus()});
+  const cm=$("#cmode");if(cm)cm.onsubmit=e=>{e.preventDefault();const v=$("#ctopic").value.trim(),md=CHAT.mode;CHAT.mode=null;if(!v)return;
+    if(md==="hw")ask(k,"Can you help me with my homework? Here it is: "+v);else makeQuiz(k,v,md==="test"?10:5)};
+  const mx=$("#cmodex");if(mx)mx.onclick=()=>{CHAT.mode=null;renderChat()};
+}
+function errCopy(e){return ({not_granted:"Sprout needs permission to think. Ask a parent to allow it.",rate_limited:"Sprout needs a short break. Try again in a minute.",aborted:"Stopped."})[e&&e.code]||"Sprout couldn't answer just now. Try again in a bit."}
+async function ask(k,text){
+  if(PII.test(text)){toast("Keep personal info like phone numbers, emails and addresses private!");return}
+  const log=chatLog(k);log.push({role:"user",content:text,ts:Date.now()});CHAT.busy=true;CHAT.live="";save();renderChat();
+  const turns=log.slice(-12).map(m=>({role:m.role,content:m.content}));
+  while(turns.length&&turns[0].role!=="user")turns.shift();
+  turns[0]={role:"user",content:sproutRules(k)+"\n\n---\n"+k.name+" says: "+turns[0].content};
+  CHAT.ctl=new AbortController();
+  try{const r=await SAMPLE(turns,{signal:CHAT.ctl.signal,cache:false,onText:({text})=>{if(!CHAT)return;CHAT.live=text;const l=$("#live");if(l){l.textContent=text;const m=$("#msgs");m.scrollTop=m.scrollHeight}}});
+    log.push({role:"assistant",content:r.text.trim(),ts:Date.now()});if(k.band==="sprout")say(r.text)}
+  catch(e){log.push({role:"assistant",content:(e&&e.text?e.text+"\n\n":"")+errCopy(e),ts:Date.now()})}
+  if(CHAT){CHAT.busy=false;CHAT.live=""}save();renderChat();
+}
+async function makeQuiz(k,topic,n){
+  if(PII.test(topic)){toast("Keep personal info private!");return}
+  const log=chatLog(k);log.push({role:"user",content:`Make me a ${n===10?"practice test":"quiz"} about: ${topic}`,ts:Date.now()});CHAT.busy=true;CHAT.live="Sprout is writing your questions…";save();renderChat();
+  const g=gradeOf(k);
+  const prompt=sproutRules(k)+`\n\n---\nWrite a ${n}-question multiple-choice ${n===10?"practice test":"quiz"} about "${topic}" for a ${GRADE_NAMES[g]} student in the USA, matching US school standards for that grade. If the topic is not appropriate for a child, use a fun, safe science topic instead.
+Return ONLY JSON: {"title": short title, "questions": [{"q": question, "options": [3 or 4 short answers], "answer": index of the correct option (0-based), "why": one kid-friendly sentence explaining the answer}]}. Every fact must be correct.`;
+  CHAT.ctl=new AbortController();
+  try{const d=await SAMPLE.json(prompt,{signal:CHAT.ctl.signal,cache:false});
+    const qs=(d&&Array.isArray(d.questions)?d.questions:[]).filter(x=>x&&x.q&&Array.isArray(x.options)&&x.options.length>=2&&Number.isInteger(x.answer)&&x.answer>=0&&x.answer<x.options.length).slice(0,n).map(x=>({q:String(x.q),opts:x.options.map(String),a:x.answer,why:String(x.why||"")}));
+    if(qs.length<3)throw {code:"bad"};
+    log.push({role:"assistant",content:`Your ${n===10?"practice test":"quiz"} "${d.title||topic}" is ready with ${qs.length} questions. Good luck! 🍀`,ts:Date.now()});save();
+    closeChat();QZ={kid:k.id,kind:"ai",where:"learn",title:(n===10?"Practice test: ":"Sprout quiz: ")+(d.title||topic),icon:"🌱",qs,i:0,score:0,picked:null};S.tab="learn";render();window.scrollTo(0,0);return}
+  catch(e){log.push({role:"assistant",content:e&&e.code==="bad"?"Hmm, I couldn't make good questions for that. Try a different topic!":errCopy(e),ts:Date.now()})}
+  if(CHAT){CHAT.busy=false;CHAT.live=""}save();renderChat();
+}
+function sproutCard(k){
+  if(!S.settings.ai)return `<div class="card sproutcard off"><span class="tip-m" aria-hidden="true">🌱</span><div class="grow"><b>Sprout, your AI study buddy</b><small>Ask a parent to turn on Sprout in Settings.</small></div></div>`;
+  return `<button class="card sproutcard" data-askspr><span class="tip-m" aria-hidden="true">🌱</span><div class="grow"><b>Ask Sprout</b><small>Homework help, quizzes, practice tests and answers to your questions</small></div><span class="play">Chat</span></button>`;
+}
+function chatHistory(){
+  const kids=S.kids.filter(k=>(S.chats||{})[k.id]&&S.chats[k.id].length);
+  if(!kids.length)return `<p class="empty">No chats with Sprout yet.</p>`;
+  return kids.map(k=>`<details class="chist"><summary>${k.av} ${k.name} · ${S.chats[k.id].filter(m=>m.role==="user").length} questions</summary>
+    <div class="msgs small">${S.chats[k.id].slice(-30).map(m=>`<div class="msg ${m.role==="user"?"me":"bot"}"><small>${new Date(m.ts).toLocaleString([], {month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</small>${esc(m.content)}</div>`).join("")}</div>
+    <button class="no" data-chclear="${k.id}">Delete ${k.name}'s chats</button></details>`).join("");
 }
 
 const KC={mia:"#F2A20C",leo:"#F07A2E",ava:"#8A63E0"};
@@ -773,6 +870,7 @@ function viewMe(k){
     <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>`;
 }
 function bindKid(k){
+  document.querySelectorAll("[data-askspr]").forEach(b=>b.onclick=()=>openChat(k));
   bindLearn(k);
   bindDaily(k);
   document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{const id=b.dataset.sport;k.sports=k.sports.includes(id)?k.sports.filter(x=>x!==id):[...k.sports,id];save();render()});
@@ -829,6 +927,10 @@ function viewSettings(){
   <div class="card"><h3 style="font-size:18px">🏫 School</h3><p class="note" style="margin-top:6px">Quizzes follow each child's grade, using common US school topics.</p>
     <div class="list" style="margin-top:10px">${S.kids.map(k=>`<label class="setrow"><span>${k.av} ${k.name}</span><select data-grade="${k.id}">${Object.entries(GRADE_NAMES).map(([g,n])=>`<option value="${g}" ${+g===gradeOf(k)?"selected":""}>${n}</option>`).join("")}</select></label>`).join("")}
       <label class="setrow"><span>🗺️ Our state</span><select id="setstate">${ST_NAMES.map(n=>`<option ${n===S.settings.state?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
+  <div class="card"><div class="section-title"><h3>🌱 Sprout AI helper</h3><span class="tag ${S.settings.ai?"st-approved":""}">${S.settings.ai?"On":"Off"}</span></div>
+    <p class="note" style="margin-top:6px">Sprout is an AI study buddy powered by Claude. It answers questions at your child's age and grade, helps with homework step by step without handing over answers, and makes quizzes and practice tests. It steers away from grown-up topics and reminds kids never to share personal info.</p>
+    <div class="list" style="margin-top:10px"><label class="tgl"><input type="checkbox" id="setai" ${S.settings.ai?"checked":""}><span>I'm the parent and I allow my kids to chat with Sprout</span></label></div>
+    <h4 class="vh">Chat history</h4><div class="list" style="margin-top:6px">${chatHistory()}</div></div>
   <div class="card"><div class="section-title"><h3>🎥 Video proof</h3><span class="tag ${S.settings.proof?"st-approved":""}">${S.settings.proof?"On":"Off"}</span></div>
     <p class="note" style="margin-top:6px">When on, kids 6 and up can record a video (any length) or take a photo of an activity and send it to you. Clips stay on this family’s devices and only parents can see them. You choose which options your kids see.</p>
     <div class="list" style="margin-top:10px">
@@ -862,6 +964,8 @@ function viewFamily(){
 function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
+  const sa=$("#setai");if(sa)sa.onchange=()=>{S.settings.ai=sa.checked;toast(sa.checked?"Sprout is on for your kids":"Sprout is off");save();render()};
+  document.querySelectorAll("[data-chclear]").forEach(b=>b.onclick=()=>{delete S.chats[b.dataset.chclear];toast("Chats deleted");save();render()});
   document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);toast(`${k.name} got ${p} Stars for homework`);save();render()});
   document.querySelectorAll("[data-hwno]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwno);dropProof(h.kid,"hw"+h.id);h.state="todo";toast("Sent back to the homework list");save();render()});
   document.querySelectorAll("[data-grade]").forEach(sel=>sel.onchange=()=>{kid(sel.dataset.grade).grade=+sel.value;toast("Grade updated. Quizzes will match it.");save()});
