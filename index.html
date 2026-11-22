@@ -177,6 +177,8 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
 .proof{display:flex;flex-direction:column;gap:6px;align-items:flex-end;margin:-4px 0 8px}
 .proof video,.proof img{width:100%;max-height:220px;border-radius:12px;background:#000;object-fit:contain}
 .proofnote{margin:-6px 0 8px}
+.subopts{display:flex;flex-direction:column;gap:8px;margin-left:32px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.subopts b{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
 .tgl{display:flex;gap:10px;align-items:flex-start;font-size:14px;font-weight:700;line-height:1.35;cursor:pointer}
 .tgl input{width:22px;height:22px;flex:none;accent-color:var(--leaf);margin:0}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
@@ -205,8 +207,8 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
     <div class="row" style="margin-bottom:6px"><b class="grow" id="prtitle" style="font-family:var(--display);font-size:18px"></b><button class="no" id="prclose">Cancel</button></div>
     <p class="note" style="margin-bottom:12px">Show your parent you did it! Only your parents will see this.</p>
     <div class="list">
-      <label class="pbtn" for="pvid">🎥 Record a short video<input id="pvid" type="file" accept="video/*" capture="user" hidden></label>
-      <label class="pbtn" for="pimg">📸 Take a photo<input id="pimg" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="pbtn" id="optv" for="pvid">🎥 Record a short video<input id="pvid" type="file" accept="video/*" capture="user" hidden></label>
+      <label class="pbtn" id="opti" for="pimg">📸 Take a photo<input id="pimg" type="file" accept="image/*" capture="environment" hidden></label>
       <button class="pbtn" id="psaw">👀 A parent saw me do it</button>
     </div>
   </div>
@@ -285,6 +287,8 @@ const KEY="smartkids-proto-v1";
 let S; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.kids)S=seed();
 const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketball","running"]};
 S.settings=S.settings||{proof:false,autoDelete:true};
+S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
+const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
 S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 const $=s=>document.querySelector(s);
@@ -581,7 +585,7 @@ function bindKid(k){
   document.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=actById(b.dataset.act);S.today[k.id]=S.today[k.id]||{};
-    if(k.band!=="sprout"&&S.settings&&S.settings.proof){openProof(k,a);return}
+    if(k.band!=="sprout"&&proofOn()){openProof(k,a);return}
     if(k.band==="trail"){S.today[k.id][a.id]="done";const p=award(k,a);burst(b);toast(`+${p} Stars! Nice work, ${k.name}.`)}
     else{S.today[k.id][a.id]="pending";burst(b);toast(k.band==="sprout"?"Yay! A grown-up will give you your Stars.":"Sent to a parent for Stars!");if(k.band==="sprout")say("Great job, "+k.name+"!")}
     save();render();
@@ -624,9 +628,14 @@ function viewVideos(){
 function viewSettings(){
   return `<div><h2 style="font-size:24px">Settings</h2><p class="note">Only parents can see and change these.</p></div>
   <div class="card"><div class="section-title"><h3>🎥 Video proof</h3><span class="tag ${S.settings.proof?"st-approved":""}">${S.settings.proof?"On":"Off"}</span></div>
-    <p class="note" style="margin-top:6px">When on, kids 6 and up can record a short clip or take a photo of an activity and send it to you. Clips stay on this family’s devices and only parents can see them. Kids can always choose “A parent saw it” instead.</p>
+    <p class="note" style="margin-top:6px">When on, kids 6 and up can record a short clip or take a photo of an activity and send it to you. Clips stay on this family’s devices and only parents can see them. You choose which options your kids see.</p>
     <div class="list" style="margin-top:10px">
       <label class="tgl"><input type="checkbox" id="setproof" ${S.settings.proof?"checked":""}><span>I’m the parent and I allow my kids to record proof videos and photos</span></label>
+      ${S.settings.proof?`<div class="subopts"><b>Options my kids can choose</b>
+        <label class="tgl"><input type="checkbox" data-opt="saw" ${S.settings.opts.saw?"checked":""}><span>👀 A parent saw it</span></label>
+        <label class="tgl"><input type="checkbox" data-opt="video" ${S.settings.opts.video?"checked":""}><span>🎥 Record a short clip</span></label>
+        <label class="tgl"><input type="checkbox" data-opt="photo" ${S.settings.opts.photo?"checked":""}><span>📸 Take a photo</span></label>
+        ${proofOn()?"":`<p class="note">With no options picked, kids just tap Done like before.</p>`}</div>`:""}
       <label class="tgl"><input type="checkbox" id="setdel" ${S.settings.autoDelete?"checked":""}><span>Delete each clip as soon as I approve it</span></label>
     </div></div>
   <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. In the real app you can export or delete all family data from here.</p></div>`;
@@ -652,6 +661,7 @@ function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]
   return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
 function bindParent(){
   const sp=$("#setproof");if(sp)sp.onchange=()=>{S.settings.proof=sp.checked;if(!sp.checked)Object.keys(PROOFS).forEach(k=>{const [a,b]=k.split("|");dropProof(a,b)});toast(sp.checked?"Video proof turned on":"Video proof off. Saved clips deleted.");save();render()};
+  document.querySelectorAll("[data-opt]").forEach(c=>c.onchange=()=>{S.settings.opts[c.dataset.opt]=c.checked;save();render()});
   const sd=$("#setdel");if(sd)sd.onchange=()=>{S.settings.autoDelete=sd.checked;save()};
   document.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.pdel.split("|");dropProof(id,aid);toast("Clip deleted");render()});
   S.vids=S.vids||{};
@@ -690,7 +700,7 @@ function proofView(id,aid){const p=PROOFS[id+"|"+aid];if(!p)return "";
     <button class="no" data-pdel="${id}|${aid}">Delete clip</button></div>`}
 function dropProof(id,aid){const k=id+"|"+aid,p=PROOFS[k];if(p&&p.url)URL.revokeObjectURL(p.url);delete PROOFS[k]}
 let PCTX=null;
-function openProof(k,a){PCTX={k,a};$("#prtitle").textContent=a.icon+" "+a.t;$("#proof").hidden=false}
+function openProof(k,a){PCTX={k,a};const o=S.settings.opts;$("#optv").hidden=!o.video;$("#opti").hidden=!o.photo;$("#psaw").hidden=!o.saw;$("#prtitle").textContent=a.icon+" "+a.t;$("#proof").hidden=false}
 function closeProof(){$("#proof").hidden=true;PCTX=null;$("#pvid").value="";$("#pimg").value=""}
 function sendProof(type,url){const {k,a}=PCTX;S.today[k.id][a.id]="pending";PROOFS[k.id+"|"+a.id]={type,url};closeProof();
   toast(type==="saw"?"Sent to your parent for Stars!":(type==="video"?"Video":"Photo")+" sent to your parent. Only they can see it.");save();render()}
