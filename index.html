@@ -248,13 +248,32 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .lock h2{font-size:26px}.lock>p{margin:0;color:var(--muted);font-weight:600;max-width:34ch;line-height:1.45}
 .ideas{margin:8px 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-weight:700}
 .demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
+[hidden]{display:none!important}
+.setup{display:flex;flex-direction:column;gap:14px}
+.setup .step{display:flex;align-items:center;gap:8px;font-family:var(--display);font-size:18px;font-weight:600}
+.setup .step i{font-style:normal;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--leaf);color:var(--leaf-ink);font-size:15px;flex:none}
+.kidrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}.kidrow:last-child{border-bottom:0}
+.kidrow .kav{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:26px;flex:none}
+.kidrow .grow{flex:1;min-width:0}.kidrow b{display:block;font-size:16px}.kidrow small{color:var(--muted);font-weight:700;font-size:12px}
+.bigbtn{width:100%;padding:14px 16px;border-radius:16px;font-weight:800;font-size:16px;background:var(--leaf);color:var(--leaf-ink)}
+.bigbtn:disabled{opacity:.45}
+.addbtn{width:100%;padding:12px;border-radius:14px;font-weight:800;font-size:15px;border:2px dashed var(--line);background:transparent;color:var(--ink)}
+.linkbtn{background:none;color:var(--muted);font-weight:700;font-size:13px;text-decoration:underline;padding:6px;align-self:center}
+#kidbox{max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.kform label.f{display:flex;flex-direction:column;gap:4px;font-weight:800;font-size:14px}
+.kform input,.kform select{padding:11px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px;min-width:0}
+.kform .two{display:flex;gap:10px}.kform .two>*{flex:1;min-width:0}
+.avpick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.avpick button{font-size:26px;padding:6px 0;border-radius:12px;background:var(--surface-2);border:2px solid transparent}
+.avpick button[aria-pressed="true"]{border-color:var(--leaf);background:var(--surface)}
+.sportpick{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 
 <div class="app">
   <header>
     <div class="brand">
       <div><h1><span aria-hidden="true">🌱</span> <span id="appname"></span> <small>prototype</small></h1><p class="slogan" id="slogan"></p></div>
-      <button class="reset" id="reset">Reset demo</button>
+      <button class="reset" id="reset" hidden>Exit demo</button>
     </div>
     <div class="profiles" id="profiles" role="group" aria-label="Choose who is using the app"></div>
   </header>
@@ -282,6 +301,7 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 <div class="sheet" id="chat" hidden role="dialog" aria-modal="true" aria-label="Chat with Sprout"><div class="sheet-in chat-in"></div></div>
 <div class="party" id="party" hidden aria-live="polite"><div><span class="pi"></span><b></b><small></small></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sheet" id="kidsheet" hidden role="dialog" aria-modal="true" aria-label="Child profile"><div class="sheet-in kform" id="kidbox"></div></div>
 
 <script>
 // Change the app name and slogan here
@@ -332,21 +352,28 @@ const BADGES=[
   {id:"streak",icon:"🔥",n:"7-day streak",test:k=>k.streak>=7},
   {id:"hundred",icon:"💯",n:"100 Stars",test:k=>k.lifetime>=100}];
 
-function seed(){
-  return {
-    who:"leo", tab:"today", filter:"all",
-    kids:[
-      {id:"mia",name:"Mia",age:4,band:"sprout",av:"🐣",stars:35,lifetime:85,sports:["dance","swimming"],streak:3,pillar:{eat:2,move:1,family:3,learn:1,rest:1}},
-      {id:"leo",name:"Leo",age:8,band:"explorer",av:"🦊",stars:120,lifetime:240,sports:["soccer","biking"],streak:6,pillar:{eat:3,move:4,family:2,learn:2,rest:1}},
-      {id:"ava",name:"Ava",age:12,band:"trail",av:"🦋",stars:210,lifetime:390,sports:["basketball","running"],streak:11,pillar:{eat:2,move:5,family:3,learn:4,rest:2}}],
-    today:{mia:{s1:"done",s5:"pending"},leo:{e3:"done",e7:"pending"},ava:{t3:"done"}},
-    rewards:[
+/* New families start empty and add their own kids. The sample family is only loaded from "Try the demo family". */
+const REWARDS0=()=>[
       {id:"r1",icon:"🌳",t:"Trip to the park",c:60},
       {id:"r2",icon:"🎬",t:"Pick the family movie",c:80},
       {id:"r3",icon:"🎮",t:"30 extra minutes of screen time",c:50},
       {id:"r4",icon:"🍕",t:"Choose Friday dinner",c:100},
       {id:"r5",icon:"📕",t:"A new book",c:150},
-      {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}],
+      {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}];
+const SETTINGS0=lim=>({proof:false,autoDelete:true,opts:{video:true,photo:true,saw:true},screen:{on:false,limits:lim||{}},state:"New York"});
+function seed(){
+  return {who:"parent",tab:"approve",filter:"all",setup:true,demo:false,kids:[],today:{},rewards:REWARDS0(),requests:[],homework:[],goals:[],
+    goal:{t:"Family adventure day",target:500,have:0},settings:SETTINGS0()};
+}
+function demoSeed(){
+  return {
+    who:"leo", tab:"today", filter:"all", demo:true, settings:SETTINGS0({mia:30,leo:60,ava:90}),
+    kids:[
+      {id:"mia",name:"Mia",age:4,band:"sprout",av:"🐣",stars:35,lifetime:85,sports:["dance","swimming"],streak:3,pillar:{eat:2,move:1,family:3,learn:1,rest:1}},
+      {id:"leo",name:"Leo",age:8,band:"explorer",av:"🦊",stars:120,lifetime:240,sports:["soccer","biking"],streak:6,pillar:{eat:3,move:4,family:2,learn:2,rest:1}},
+      {id:"ava",name:"Ava",age:12,band:"trail",av:"🦋",stars:210,lifetime:390,sports:["basketball","running"],streak:11,pillar:{eat:2,move:5,family:3,learn:4,rest:2}}],
+    today:{mia:{s1:"done",s5:"pending"},leo:{e3:"done",e7:"pending"},ava:{t3:"done"}},
+    rewards:REWARDS0(),
     requests:[{id:"q0",kid:"ava",reward:"r2",state:"asked"}],
     homework:[{id:"h1",kid:"leo",subj:"Math",t:"Math worksheet page 42",state:"todo"},{id:"h2",kid:"ava",subj:"Science",t:"Lab report on plant growth",state:"pending"}],
     goals:[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:220,state:"active"},{id:"g2",kid:"ava",target:200,reward:"Movie night with friends",icon:"🎬",start:240,state:"active"}],
@@ -359,7 +386,7 @@ const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketb
 S.settings=S.settings||{proof:false,autoDelete:true};
 if(!S.goals){const lk=S.kids.find(x=>x.id==="leo");S.goals=lk?[{id:"g1",kid:"leo",target:50,reward:"30 minutes of extra screen time",icon:"🎮",start:lk.lifetime-20,state:"active"}]:[]}
 S.settings.screen=S.settings.screen||{on:false,limits:{mia:30,leo:60,ava:90}};
-S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";
+S.homework=S.homework||[];S.settings.state=S.settings.state||"New York";S.today=S.today||{};if(S.demo===undefined)S.demo=S.kids.some(k=>["mia","leo","ava"].includes(k.id));
 S.settings.opts=S.settings.opts||{video:true,photo:true,saw:true};
 const proofOn=()=>S.settings.proof&&Object.values(S.settings.opts).some(Boolean);
 S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
@@ -477,6 +504,9 @@ function goalsCard(k){const gs=(S.goals||[]).filter(g=>g.kid===k.id&&g.state!=="
 function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length+(S.timeReq||[]).filter(q=>q.state==="asked").length+(S.goals||[]).filter(g=>g.state==="reached").length+(S.homework||[]).filter(h=>h.state==="pending").length}
 
 function render(){
+  $("#reset").hidden=!S.demo;
+  if(S.setup||!S.kids.length){renderSetup();return}
+  syncKids();
   // profiles
   const P=$("#profiles");
   P.innerHTML=S.kids.map(k=>`<button class="chip" aria-pressed="${S.who===k.id}" data-who="${k.id}"><span class="av">${k.av}</span>${k.name}<span class="age">${k.age}</span></button>`).join("")+
@@ -814,6 +844,76 @@ function chatHistory(){
 }
 
 const KC={mia:"#F2A20C",leo:"#F07A2E",ava:"#8A63E0"};
+/* ---------- FAMILY SETUP: each family adds its own kids. Stored only on this device. ---------- */
+const PAL=["#F07A2E","#8A63E0","#1FA3C9","#E0577A","#F2A20C","#2E9E5B","#5B6CE0"];
+const AVS=["🦊","🐼","🦁","🐯","🐨","🐸","🐵","🦄","🐣","🦋","🐬","🐙","🦖","🐝","🐞","🐧","🦉","🐻"];
+const bandOf=a=>a<=5?"sprout":a<=9?"explorer":"trail";
+const ageGrade=a=>Math.max(-1,Math.min(9,a-5));
+const cleanName=t=>String(t||"").replace(/[<>&"'`\\]/g,"").replace(/\s+/g," ").trim().slice(0,20);
+function syncKids(){document.querySelector("nav").hidden=false;$("#profiles").hidden=false;S.kids.forEach(k=>{if(k.color)KC[k.id]=k.color;S.today[k.id]=S.today[k.id]||{}});if(S.who!=="parent"&&!kid(S.who))S.who=S.kids[0].id}
+const kidRow=k=>`<div class="kidrow"><span class="kav" style="background:${KC[k.id]||k.color||"var(--surface-2)"}33">${k.av}</span><div class="grow"><b>${esc(k.name)}</b><small>Age ${k.age} · ${GRADE_NAMES[gradeOf(k)]}${k.sports.length?" · "+k.sports.map(x=>SPORTS[x]?SPORTS[x].i:"").join(""):""}</small></div><button class="no" data-editkid="${k.id}">Edit</button></div>`;
+function renderSetup(){
+  document.querySelector("nav").hidden=true;$("#profiles").hidden=true;document.body.classList.remove("kidmode");document.body.style.setProperty("--kc","var(--leaf)");
+  S.kids.forEach(k=>{if(k.color)KC[k.id]=k.color});
+  $("#main").innerHTML=`<div class="setup">
+  <div class="hero" style="--kc:var(--leaf)"><div class="hero-txt"><span class="eyebrow">Welcome!</span><h2>Let's set up your family</h2><p>Add your kids, then they earn Stars for healthy habits.</p></div><span class="hero-art" aria-hidden="true">🌱</span></div>
+  <div class="card"><div class="step"><i>1</i>Where do you live?</div>
+    <label class="setrow" style="margin-top:10px"><span>🗺️ Our state</span><select id="sstate" aria-label="Our state">${ST_NAMES.map(n=>`<option ${n===S.settings.state?"selected":""}>${n}</option>`).join("")}</select></label>
+    <p class="note" style="margin-top:6px">Used for the “my state” quiz.</p></div>
+  <div class="card"><div class="step"><i>2</i>Add your kids</div>
+    <div style="margin-top:6px">${S.kids.length?S.kids.map(kidRow).join(""):`<p class="note">No kids yet. Add one child or more, ages 2 to 14.</p>`}</div>
+    <button class="addbtn" data-addkid style="margin-top:10px">＋ Add ${S.kids.length?"another":"a"} child</button></div>
+  <button class="bigbtn" data-setupdone ${S.kids.length?"":"disabled"}>${S.kids.length?"Let's go! 🚀":"Add a child to start"}</button>
+  <p class="note" style="text-align:center">First names and avatars only. Everything stays on this device. You can change kids any time in Parent › Settings.</p>
+  <button class="linkbtn" data-demo>Just looking? Try the demo family</button></div>`;
+  $("#tabs").innerHTML="";
+  $("#sstate").onchange=e=>{S.settings.state=e.target.value;save()};
+}
+let KF=null;
+function openKid(id){const k=id&&kid(id);
+  KF=k?{id,name:k.name,age:k.age,grade:gradeOf(k),gt:k.grade!==undefined,av:k.av,sports:[...k.sports],del:false}
+      :{id:null,name:"",age:6,grade:ageGrade(6),gt:false,av:AVS.find(a=>!S.kids.some(k=>k.av===a))||AVS[0],sports:[],del:false};
+  renderKid();$("#kidsheet").hidden=false;if(!k)setTimeout(()=>{const n=$("#kname");if(n)n.focus()},50)}
+function closeKid(){$("#kidsheet").hidden=true;KF=null}
+function renderKid(){const B=$("#kidbox");
+  B.innerHTML=`<div class="row"><b class="grow" style="font-family:var(--display);font-size:20px">${KF.id?"Edit "+esc(KF.name||"child"):"Add a child"}</b><button class="no" data-kclose>Cancel</button></div>
+  <label class="f">First name or nickname<input id="kname" maxlength="20" autocomplete="off" value="${esc(KF.name)}" placeholder="e.g. Sam"></label>
+  <div class="two"><label class="f">Age<select id="kage">${Array.from({length:13},(_,i)=>i+2).map(a=>`<option value="${a}" ${a===KF.age?"selected":""}>${a} years</option>`).join("")}</select></label>
+    <label class="f">Grade<select id="kgrade">${Object.entries(GRADE_NAMES).map(([g,n])=>`<option value="${g}" ${+g===KF.grade?"selected":""}>${n}</option>`).join("")}</select></label></div>
+  <div class="f"><b style="font-size:14px">Pick an avatar</b><div class="avpick" style="margin-top:4px">${AVS.map(a=>`<button data-kav="${a}" aria-pressed="${a===KF.av}" aria-label="Avatar ${a}">${a}</button>`).join("")}</div></div>
+  <div class="f"><b style="font-size:14px">Favorite sports <span class="note" style="font-weight:700">(pick any)</span></b><div class="sportpick" style="margin-top:4px">${Object.entries(SPORTS).map(([id,x])=>`<button class="pfilter" data-ksport="${id}" aria-pressed="${KF.sports.includes(id)}">${x.i} ${x.n}</button>`).join("")}</div></div>
+  <button class="bigbtn" data-ksave>${KF.id?"Save changes":"Add child"}</button>
+  ${KF.id?`<button class="no" data-kdel style="color:var(--berry)">${KF.del?"Tap again to remove "+esc(KF.name)+" and their Stars":"Remove this child"}</button>`:""}`;
+  const n=$("#kname");n.oninput=()=>{KF.name=n.value};
+  $("#kage").onchange=e=>{KF.age=+e.target.value;if(!KF.gt){KF.grade=ageGrade(KF.age);$("#kgrade").value=String(KF.grade)}};
+  $("#kgrade").onchange=e=>{KF.grade=+e.target.value;KF.gt=true};
+}
+function saveKid(){const name=cleanName(KF.name);if(!name){toast("Please type a first name");$("#kname").focus();return}
+  let k=KF.id&&kid(KF.id);
+  if(!k){const id="k"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);k={id,stars:0,lifetime:0,streak:0,pillar:{eat:0,move:0,family:0,learn:0,rest:0},color:PAL[S.kids.length%PAL.length]};S.kids.push(k);S.today[id]={}}
+  Object.assign(k,{name,age:KF.age,band:bandOf(KF.age),av:KF.av,sports:KF.sports.slice()});
+  if(KF.gt||KF.grade!==ageGrade(KF.age))k.grade=KF.grade;else delete k.grade;
+  const added=!KF.id;closeKid();save();render();toast(added?`${name} added! 🎉`:"Saved")}
+function dropKid(id){const k=kid(id);if(!k)return;S.kids=S.kids.filter(x=>x.id!==id);
+  for(const m of [S.today,S.edu,S.chats,S.screen,S.settings.screen.limits])if(m)delete m[id];
+  for(const a of ["requests","homework","goals","timeReq"])if(S[a])S[a]=S[a].filter(x=>x.kid!==id);
+  if(S.settings.screen.device===id)S.settings.screen.device=null;
+  if(S.who===id)S.who="parent";if(!S.kids.length)S.setup=true;closeKid();save();render();toast(k.name+" was removed")}
+let eraseArmed=0;
+document.addEventListener("click",e=>{const t=e.target.closest("[data-addkid],[data-editkid],[data-kclose],[data-kav],[data-ksport],[data-ksave],[data-kdel],[data-setupdone],[data-demo],[data-startover]");if(!t)return;const d=t.dataset;
+  if("addkid" in d)openKid(null);
+  else if("editkid" in d)openKid(d.editkid);
+  else if("kclose" in d)closeKid();
+  else if("kav" in d){KF.av=d.kav;renderKid()}
+  else if("ksport" in d){KF.sports=KF.sports.includes(d.ksport)?KF.sports.filter(x=>x!==d.ksport):[...KF.sports,d.ksport];renderKid()}
+  else if("ksave" in d)saveKid();
+  else if("kdel" in d){if(!KF.del){KF.del=true;renderKid();return}dropKid(KF.id)}
+  else if("setupdone" in d){if(!S.kids.length)return;S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent any time for settings.")}
+  else if("demo" in d){S=demoSeed();save();render();window.scrollTo(0,0);toast("Demo family loaded. Tap Exit demo to start your own.")}
+  else if("startover" in d){if(Date.now()-eraseArmed>3000){eraseArmed=Date.now();t.textContent="Tap again to erase all kids, Stars and settings";return}
+    eraseArmed=0;S=seed();save();render();window.scrollTo(0,0);toast("Everything erased. Let's set up your family.")}
+});
+$("#kidsheet").onclick=e=>{if(e.target.id==="kidsheet")closeKid()};
 /* ---------- SCREEN TIME LINK (optional, parent-controlled). Prototype simulates usage; a real iPhone app would use Apple's Screen Time API. ---------- */
 function scr(k){S.screen=S.screen||{};const d=NATIVE?localDay():dayNo();let x=S.screen[k.id];if(!x||x.day!==d)x=S.screen[k.id]={day:d,used:0,extra:0};return x}
 const limitOf=k=>(S.settings.screen.limits[k.id]||60);
@@ -1010,6 +1110,9 @@ function viewVideos(){
 }
 function viewSettings(){
   return `<div><h2 style="font-size:24px">Settings</h2><p class="note">Only parents can see and change these.</p></div>
+  <div class="card"><div class="section-title"><h3>👧 Our kids</h3><span>${S.kids.length}</span></div>
+    <div style="margin-top:6px">${S.kids.map(kidRow).join("")}</div>
+    <button class="addbtn" data-addkid style="margin-top:10px">＋ Add a child</button></div>
   <div class="card"><h3 style="font-size:18px">🏫 School</h3><p class="note" style="margin-top:6px">Quizzes follow each child's grade, using common US school topics.</p>
     <div class="list" style="margin-top:10px">${S.kids.map(k=>`<label class="setrow"><span>${k.av} ${k.name}</span><select data-grade="${k.id}">${Object.entries(GRADE_NAMES).map(([g,n])=>`<option value="${g}" ${+g===gradeOf(k)?"selected":""}>${n}</option>`).join("")}</select></label>`).join("")}
       <label class="setrow"><span>🗺️ Our state</span><select id="setstate">${ST_NAMES.map(n=>`<option ${n===S.settings.state?"selected":""}>${n}</option>`).join("")}</select></label></div></div>
@@ -1035,7 +1138,8 @@ function viewSettings(){
         ${proofOn()?"":`<p class="note">With no options picked, kids just tap Done like before.</p>`}</div>`:""}
       <label class="tgl"><input type="checkbox" id="setdel" ${S.settings.autoDelete?"checked":""}><span>Delete each clip as soon as I approve it</span></label>
     </div></div>
-  <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. In the real app you can export or delete all family data from here.</p></div>`;
+  <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. Everything is saved only on this device.</p>
+    <button class="no" data-startover style="margin-top:10px;color:var(--berry)">Erase everything and start over</button></div>`;
 }
 function viewRewards(){
   const gs=(S.goals||[]).filter(g=>g.state!=="given");
@@ -1134,8 +1238,8 @@ $("#pvid").onchange=e=>{const f=e.target.files[0];if(f)sendProof("video",URL.cre
 $("#pimg").onchange=e=>{const f=e.target.files[0];if(f)sendProof("photo",URL.createObjectURL(f))};
 $("#psaw").onclick=()=>sendProof("saw");$("#prclose").onclick=closeProof;$("#proof").onclick=e=>{if(e.target.id==="proof")closeProof()};
 let armed=false;
-$("#reset").onclick=()=>{const b=$("#reset");if(!armed){armed=true;b.textContent="Tap again to reset";setTimeout(()=>{armed=false;b.textContent="Reset demo"},2500);return}
-  S=seed();save();armed=false;b.textContent="Reset demo";render();toast("Demo reset")};
+$("#reset").onclick=()=>{const b=$("#reset");if(!armed){armed=true;b.textContent="Tap again to exit";setTimeout(()=>{armed=false;b.textContent="Exit demo"},2500);return}
+  S=seed();save();armed=false;b.textContent="Exit demo";render();toast("Demo closed. Set up your own family!")};
 if(NATIVE&&S.who==="parent"){const dk=devKid()||S.kids[0];if(dk){S.who=dk.id;S.tab="today"}}
 render();
 if(NATIVE){BrightSproutNative.post("ready");nativeSync()}
