@@ -1,0 +1,77 @@
+# BrightSprout native iPhone app.
+# Generate the Xcode project on a Mac with:  brew install xcodegen && cd ios && xcodegen
+# Then open BrightSprout.xcodeproj. See ios/README.md for every step.
+name: BrightSprout
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    # Change BUNDLE_PREFIX to something unique to you (for example com.yourfamilyname).
+    BUNDLE_PREFIX: com.yourname
+    APP_GROUP_ID: group.$(BUNDLE_PREFIX).brightsprout
+    # Pick your team in Xcode (Signing & Capabilities) or paste your Team ID here.
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    TARGETED_DEVICE_FAMILY: "1"
+    GENERATE_INFOPLIST_FILE: YES
+targets:
+  BrightSprout:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+      # The exact same web app that runs on GitHub Pages, bundled so it works offline.
+      - path: ../index.html
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).brightsprout
+        PRODUCT_NAME: BrightSprout
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/BrightSprout.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: BrightSprout
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_NSCameraUsageDescription: Kids can record a video or take a photo of a healthy activity to show a parent.
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: Proof videos can include sound.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Kids can pick a photo or video of a healthy activity to show a parent.
+    dependencies:
+      - target: BrightSproutMonitor
+      - target: BrightSproutShield
+      - target: BrightSproutShieldAction
+  BrightSproutMonitor:
+    type: app-extension
+    platform: iOS
+    sources: [Monitor, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).brightsprout.monitor
+        INFOPLIST_FILE: Monitor/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Monitor/Monitor.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: BrightSprout Monitor
+  BrightSproutShield:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldConfig, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).brightsprout.shield
+        INFOPLIST_FILE: ShieldConfig/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ShieldConfig/ShieldConfig.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: BrightSprout Shield
+  BrightSproutShieldAction:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldAction, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(BUNDLE_PREFIX).brightsprout.shieldaction
+        INFOPLIST_FILE: ShieldAction/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ShieldAction/ShieldAction.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: BrightSprout Shield Action
