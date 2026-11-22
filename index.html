@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-title" content="BrightSprout">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>BrightSprout</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: a single phone-width app column, sticky header with profile switcher, fixed bottom tab bar */
+:root{
+  --bg:#F3F7F1; --surface:#FFFFFF; --surface-2:#E8F0E4; --ink:#1F2B24; --muted:#5E6E64; --line:#D5E1D0;
+  --leaf:#2F9E5B; --leaf-ink:#FFFFFF; --sun:#F5B731; --sun-soft:#FFF1C9; --sky:#3A8FD9; --berry:#E2576B; --plum:#7E5BD6;
+  --star:#E89B0C; --shadow:0 2px 0 rgba(31,43,36,.08);
+  --display:"Fredoka","Nunito",ui-rounded,system-ui,sans-serif;
+  --body:"Nunito",ui-rounded,system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111814; --surface:#1A231E; --surface-2:#223029; --ink:#E9F1EA; --muted:#9DB0A3; --line:#2E3D35;
+  --leaf:#4CC27C; --leaf-ink:#0D1A12; --sun:#F7C64F; --sun-soft:#3A3117; --sky:#64A9E8; --berry:#F07A8B; --plum:#A88BF0;
+  --star:#F7C64F; --shadow:0 2px 0 rgba(0,0,0,.3); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#111814; --surface:#1A231E; --surface-2:#223029; --ink:#E9F1EA; --muted:#9DB0A3; --line:#2E3D35;
+  --leaf:#4CC27C; --leaf-ink:#0D1A12; --sun:#F7C64F; --sun-soft:#3A3117; --sky:#64A9E8; --berry:#F07A8B; --plum:#A88BF0;
+  --star:#F7C64F; --shadow:0 2px 0 rgba(0,0,0,.3); color-scheme:dark }
+*{box-sizing:border-box}
+html,body{height:100%}
+html{overflow-x:clip}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px;border-radius:10px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;font-weight:600}
+.app{max-width:460px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 8px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.brand h1{font-size:22px;color:var(--leaf);display:flex;align-items:center;gap:6px}
+.brand small{font-family:var(--body);color:var(--muted);font-size:12px;font-weight:700}
+.slogan{margin:2px 0 0;font-size:12px;font-weight:800;color:var(--muted);letter-spacing:.02em}
+.reset{white-space:nowrap;font-size:12px;color:var(--muted);font-weight:700;padding:6px 8px}
+.profiles{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.profiles::-webkit-scrollbar{display:none}
+.chip{display:flex;align-items:center;gap:6px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--surface);border:2px solid var(--line);white-space:nowrap;font-weight:700;font-size:14px}
+.chip .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:16px;background:var(--surface-2)}
+.chip[aria-pressed="true"]{border-color:var(--leaf);background:var(--leaf);color:var(--leaf-ink)}
+.chip[aria-pressed="true"] .av{background:rgba(255,255,255,.25)}
+.chip .age{font-weight:600;opacity:.75;font-size:12px}
+main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 110px;display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
+.hello{display:flex;gap:12px;align-items:center}
+.hello h2{font-size:24px}
+.hello p{margin:2px 0 0;color:var(--muted);font-weight:600;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center}
+.stat b{display:block;font-family:var(--display);font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.stat.stars b{color:var(--star)} .stat.streak b{color:var(--berry)} .stat.goal b{color:var(--sky)}
+.section-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.section-title h3{font-size:18px}
+.section-title span{color:var(--muted);font-size:13px;font-weight:700}
+.pillars{display:flex;gap:6px;flex-wrap:wrap}
+.pfilter{padding:6px 10px;border-radius:999px;font-size:13px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.pfilter[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.quests{display:flex;flex-direction:column;gap:10px}
+.quest{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:var(--shadow)}
+.quest .ic{width:48px;height:48px;flex:none;border-radius:14px;display:grid;place-items:center;font-size:26px}
+.quest .txt{flex:1;min-width:0}
+.quest .txt b{display:block;font-size:15px;line-height:1.25}
+.quest .txt small{color:var(--muted);font-weight:700;font-size:12px}
+.qbtn{flex:none;min-width:76px;padding:10px 12px;border-radius:14px;font-weight:800;font-size:14px;background:var(--leaf);color:var(--leaf-ink)}
+.qbtn.pending{background:var(--sun-soft);color:var(--ink)}
+.qbtn.done{background:var(--surface-2);color:var(--leaf)}
+.qbtn:disabled{cursor:default}
+.p-eat{background:#E4F5DA} .p-move{background:#DCEBFA} .p-family{background:#FBE1E5} .p-learn{background:#ECE4FB} .p-rest{background:#FFF1C9}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .p-eat{background:#24402C}:root:not([data-theme="light"]) .p-move{background:#1F3448}:root:not([data-theme="light"]) .p-family{background:#47262C}:root:not([data-theme="light"]) .p-learn{background:#30284A}:root:not([data-theme="light"]) .p-rest{background:#3A3117}}
+:root[data-theme="dark"] .p-eat{background:#24402C}:root[data-theme="dark"] .p-move{background:#1F3448}:root[data-theme="dark"] .p-family{background:#47262C}:root[data-theme="dark"] .p-learn{background:#30284A}:root[data-theme="dark"] .p-rest{background:#3A3117}
+/* Little Sprouts big tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{border-radius:24px;padding:16px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:3px solid transparent;font-weight:800;font-size:15px;position:relative}
+.tile .big{font-size:48px;line-height:1}
+.tile .st{font-size:13px;color:var(--muted);font-weight:800}
+.tile.pending{border-color:var(--sun)} .tile.done{border-color:var(--leaf)}
+.tile .badge{position:absolute;top:8px;right:8px;font-size:12px;background:var(--surface);border-radius:999px;padding:2px 8px;font-weight:800}
+.pet{display:flex;align-items:center;gap:14px}
+.pet .sprout{font-size:56px;line-height:1;transition:transform .4s}
+.bar{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--leaf);border-radius:999px;transition:width .5s}
+.bar.sky i{background:var(--sky)} .bar.sun i{background:var(--sun)}
+.speak{font-size:13px;font-weight:800;color:var(--sky);padding:4px 0}
+/* shop */
+.shop{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.reward{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px;box-shadow:var(--shadow)}
+.reward .big{font-size:34px}
+.reward b{font-size:14px;line-height:1.25;flex:1}
+.cost{font-weight:800;color:var(--star);font-variant-numeric:tabular-nums}
+.rbtn{padding:8px;border-radius:12px;font-weight:800;font-size:13px;background:var(--sun);color:#3A2A00}
+.rbtn:disabled{background:var(--surface-2);color:var(--muted)}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.bdg{text-align:center;font-size:11px;font-weight:800;color:var(--muted);display:flex;flex-direction:column;gap:4px;align-items:center}
+.bdg .m{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;font-size:28px;background:var(--surface-2);filter:grayscale(1);opacity:.45}
+.bdg.on{color:var(--ink)} .bdg.on .m{filter:none;opacity:1;background:var(--sun-soft);box-shadow:0 0 0 3px var(--sun) inset}
+/* parent */
+.row{display:flex;align-items:center;gap:10px}
+.row .grow{flex:1;min-width:0}
+.list{display:flex;flex-direction:column;gap:10px}
+.appr{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.appr:last-child{border-bottom:0}
+.appr .who{font-size:12px;color:var(--muted);font-weight:800}
+.ok{background:var(--leaf);color:var(--leaf-ink);padding:8px 12px;border-radius:12px;font-weight:800;font-size:13px}
+.no{background:var(--surface-2);padding:8px 10px;border-radius:12px;font-weight:800;font-size:13px;color:var(--muted)}
+.empty{color:var(--muted);font-weight:600;text-align:center;padding:12px 0;font-size:14px}
+.price{display:flex;align-items:center;gap:6px}
+.price button{width:32px;height:32px;border-radius:10px;background:var(--surface-2);font-weight:800}
+.price span{min-width:44px;text-align:center;font-weight:800;color:var(--star);font-variant-numeric:tabular-nums}
+.addform{display:flex;gap:8px;flex-wrap:wrap}
+.addform input{flex:1 1 160px;min-width:0;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:15px}
+.addform input[type=number]{flex:0 0 84px}
+.kidsum{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.kidsum:last-child{border-bottom:0}
+.mini{display:grid;grid-template-columns:70px 1fr 34px;gap:8px;align-items:center;font-size:12px;font-weight:700;color:var(--muted)}
+.mini em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+.note{font-size:13px;color:var(--muted);line-height:1.45;margin:0}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+/* tab bar */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+nav .in{max-width:460px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr}
+nav button{padding:10px 4px 12px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:800;color:var(--muted);position:relative}
+nav button .i{font-size:22px;line-height:1}
+nav button[aria-current="page"]{color:var(--leaf)}
+nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18px;border-radius:999px;background:var(--berry);color:#fff;font-size:11px;display:grid;place-items:center;padding:0 4px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:800;font-size:14px;transition:.25s;z-index:20;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.burst{position:fixed;pointer-events:none;z-index:30;font-size:22px;animation:fly .9s ease-out forwards}
+@keyframes fly{from{transform:translate(0,0) scale(.6);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0}}
+@media (prefers-reduced-motion: reduce){.burst{display:none}.toast,.bar i,.pet .sprout{transition:none}}
+.vid{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--berry);color:#fff;text-decoration:none;font-size:15px;font-weight:800}
+.vlist{display:flex;flex-direction:column;gap:8px}
+.vrow{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
+.vrow .ic{width:44px;height:44px;flex:none;border-radius:12px;display:grid;place-items:center;font-size:24px}
+.vrow b{flex:1;min-width:0;font-size:15px;line-height:1.25}
+.vrow .play{flex:none;background:var(--berry);color:#fff;border-radius:999px;padding:6px 12px;font-size:13px;font-weight:800}
+.daily{border:2px solid var(--sun)}
+.dstep{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.dstep:last-of-type{border-bottom:0}
+.dnum{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--sun-soft);font-weight:800;font-size:13px}
+.dstep.done .dnum{background:var(--leaf);color:var(--leaf-ink)}
+.dic{font-size:26px;flex:none}
+.dstep .txt{flex:1;min-width:0}.dstep .txt b{display:block;font-size:15px;line-height:1.25}.dstep .txt small{color:var(--muted);font-weight:700;font-size:12px}
+.dact{display:flex;gap:6px;flex:none}.dact .qbtn{min-width:0}
+.qq{font-family:var(--display);font-size:20px;font-weight:600;margin:12px 0;line-height:1.3}
+.opts{display:flex;flex-direction:column;gap:8px}.opts.big{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{text-align:left;padding:14px;border-radius:14px;border:2px solid var(--line);background:var(--bg);font-weight:800;font-size:15px}
+.opts.big .opt{text-align:center;font-size:22px;padding:18px 8px}
+.opt.right{border-color:var(--leaf);background:var(--surface-2);color:var(--leaf)}.opt.wrong{border-color:var(--berry);color:var(--berry)}
+.opt:disabled{cursor:default}
+.why{margin-top:12px;padding:12px;border-radius:14px;background:var(--sun-soft);font-size:14px;line-height:1.45}.why.ok{background:var(--surface-2)}
+.vslot{padding:10px 0;border-bottom:1px solid var(--line)}.vslot:last-child{border-bottom:0}
+.vslot b{display:block;font-size:14px}
+.vt{display:block;font-size:12px;font-weight:700;color:var(--sky);text-decoration:none;margin-top:2px;line-height:1.35}
+.vh{margin:12px 0 0;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.tag.st-approved,.tag.st-yourpick{background:var(--surface-2);color:var(--leaf)}.tag.st-needsreview{background:var(--sun-soft);color:var(--ink)}
+.sheet[hidden]{display:none!important}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(10,20,14,.6);display:flex;align-items:flex-end;justify-content:center}
+.sheet-in{width:100%;max-width:460px;background:var(--surface);border-radius:24px 24px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.frame{position:relative;width:100%;aspect-ratio:16/9;max-width:100%;border-radius:14px;overflow:hidden;background:#000}
+.frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.demo{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 0}
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand">
+      <div><h1><span aria-hidden="true">🌱</span> <span id="appname"></span> <small>prototype</small></h1><p class="slogan" id="slogan"></p></div>
+      <button class="reset" id="reset">Reset demo</button>
+    </div>
+    <div class="profiles" id="profiles" role="group" aria-label="Choose who is using the app"></div>
+  </header>
+  <main id="main"></main>
+  <nav><div class="in" id="tabs"></div></nav>
+</div>
+<div class="sheet" id="player" hidden role="dialog" aria-modal="true" aria-label="Video player">
+  <div class="sheet-in">
+    <div class="row" style="margin-bottom:10px"><b class="grow" id="ptitle" style="font-family:var(--display);font-size:17px"></b><button class="no" id="pclose">Close</button></div>
+    <div class="frame"><iframe id="pframe" title="Video" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>
+    <p class="note" style="margin-top:10px">Video not showing? Some previews block players. <a id="pout" target="_blank" rel="noopener" style="color:var(--sky);font-weight:800">Open in YouTube</a></p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// Change the app name and slogan here
+const APP_NAME="BrightSprout";
+const SLOGAN="Making the next gen smarter and healthier";
+document.getElementById("appname").textContent=APP_NAME;document.getElementById("slogan").textContent=SLOGAN;
+const PILLARS={eat:{name:"Eat well",icon:"🥦"},move:{name:"Move & play",icon:"⚽"},family:{name:"Family & friends",icon:"🤝"},learn:{name:"Learn & create",icon:"📚"},rest:{name:"Rest & balance",icon:"🌙"}};
+const BANDS={sprout:{name:"Little Sprouts",ages:"2–5"},explorer:{name:"Explorers",ages:"6–9"},trail:{name:"Trailblazers",ages:"10–14"}};
+const ACTIVITIES={
+  sprout:[
+    {id:"s1",p:"eat",icon:"🌈",t:"Eat a rainbow plate",q:"eat the rainbow song for kids",s:10},
+    {id:"s2",p:"eat",icon:"💧",t:"Drink water, not juice",s:5},
+    {id:"s3",p:"move",icon:"🛝",t:"Play outside",s:15},
+    {id:"s4",p:"move",icon:"💃",t:"Dance party",q:"kids dance party song",s:10},
+    {id:"s5",p:"family",icon:"📖",t:"Read a book together",s:15},
+    {id:"s6",p:"family",icon:"🧸",t:"Help tidy toys",s:10},
+    {id:"s7",p:"learn",icon:"🧱",t:"Build with blocks",s:10},
+    {id:"s8",p:"rest",icon:"🛏️",t:"Bedtime on time",s:10}],
+  explorer:[
+    {id:"e1",p:"eat",icon:"🥕",t:"Try a new vegetable",q:"trying new vegetables kids cartoon",s:15},
+    {id:"e2",p:"eat",icon:"🥪",t:"Help pack lunch",s:10},
+    {id:"e3",p:"move",icon:"🚲",t:"60 minutes of active play",q:"active games for kids indoor outdoor",s:20},
+    {id:"e4",p:"move",icon:"⚽",t:"Sports practice",s:20},
+    {id:"e5",p:"family",icon:"🎲",t:"Family game night",s:15},
+    {id:"e6",p:"family",icon:"📞",t:"Call grandma or grandpa",s:10},
+    {id:"e7",p:"learn",icon:"📚",t:"Read for 20 minutes",s:15},
+    {id:"e8",p:"learn",icon:"➗",t:"Math practice",s:10},
+    {id:"e9",p:"rest",icon:"🍽️",t:"Screen-free dinner",s:10}],
+  trail:[
+    {id:"t1",p:"eat",icon:"🍳",t:"Cook a simple meal",q:"easy healthy recipes for teens to cook",s:20},
+    {id:"t2",p:"eat",icon:"🍎",t:"Healthy snacks all day",s:10},
+    {id:"t3",p:"move",icon:"🏃",t:"Run or walk 2 miles",q:"running tips for beginner teens",s:20},
+    {id:"t4",p:"move",icon:"🏀",t:"Team practice",s:20},
+    {id:"t5",p:"family",icon:"🗺️",t:"Plan a family outing",s:15},
+    {id:"t6",p:"family",icon:"🙌",t:"Help a neighbor",s:15},
+    {id:"t7",p:"learn",icon:"🎸",t:"Practice a new skill 30 min",q:"how to practice a new skill deliberate practice",s:15},
+    {id:"t8",p:"learn",icon:"📘",t:"Read a chapter of your book",s:10},
+    {id:"t9",p:"rest",icon:"📵",t:"Screen-free hour",q:"fun things to do without screens for kids",s:15},
+    {id:"t10",p:"rest",icon:"🔌",t:"Phone charges outside bedroom",s:10}]
+};
+const BADGES=[
+  {id:"first",icon:"⭐",n:"First Star",test:k=>k.lifetime>0},
+  {id:"veg",icon:"🥦",n:"Veggie Explorer",test:k=>(k.pillar.eat||0)>=3},
+  {id:"move",icon:"🏅",n:"Mover",test:k=>(k.pillar.move||0)>=3},
+  {id:"fam",icon:"💛",n:"Family Hero",test:k=>(k.pillar.family||0)>=3},
+  {id:"book",icon:"🦉",n:"Bookworm",test:k=>(k.pillar.learn||0)>=3},
+  {id:"calm",icon:"🌙",n:"Balance Pro",test:k=>(k.pillar.rest||0)>=3},
+  {id:"streak",icon:"🔥",n:"7-day streak",test:k=>k.streak>=7},
+  {id:"hundred",icon:"💯",n:"100 Stars",test:k=>k.lifetime>=100}];
+
+function seed(){
+  return {
+    who:"leo", tab:"today", filter:"all",
+    kids:[
+      {id:"mia",name:"Mia",age:4,band:"sprout",av:"🐣",stars:35,lifetime:85,sports:["dance","swimming"],streak:3,pillar:{eat:2,move:1,family:3,learn:1,rest:1}},
+      {id:"leo",name:"Leo",age:8,band:"explorer",av:"🦊",stars:120,lifetime:240,sports:["soccer","biking"],streak:6,pillar:{eat:3,move:4,family:2,learn:2,rest:1}},
+      {id:"ava",name:"Ava",age:12,band:"trail",av:"🦋",stars:210,lifetime:390,sports:["basketball","running"],streak:11,pillar:{eat:2,move:5,family:3,learn:4,rest:2}}],
+    today:{mia:{s1:"done",s5:"pending"},leo:{e3:"done",e7:"pending"},ava:{t3:"done"}},
+    rewards:[
+      {id:"r1",icon:"🌳",t:"Trip to the park",c:60},
+      {id:"r2",icon:"🎬",t:"Pick the family movie",c:80},
+      {id:"r3",icon:"🎮",t:"30 extra minutes of screen time",c:50},
+      {id:"r4",icon:"🍕",t:"Choose Friday dinner",c:100},
+      {id:"r5",icon:"📕",t:"A new book",c:150},
+      {id:"r6",icon:"🌜",t:"Stay up 15 minutes later",c:40}],
+    requests:[{id:"q0",kid:"ava",reward:"r2",state:"asked"}],
+    goal:{t:"Weekend at the lake",target:1000,have:640}
+  };
+}
+const KEY="smartkids-proto-v1";
+let S; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.kids)S=seed();
+const DEF_SPORTS={mia:["dance","swimming"],leo:["soccer","biking"],ava:["basketball","running"]};
+S.kids.forEach(k=>{if(!k.sports)k.sports=DEF_SPORTS[k.id]||[]});
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const $=s=>document.querySelector(s);
+const kid=id=>S.kids.find(k=>k.id===id);
+const acts=k=>ACTIVITIES[k.band];
+const actById=id=>Object.values(ACTIVITIES).flat().find(a=>a.id===id);
+const rewardById=id=>S.rewards.find(r=>r.id===id);
+const mult=k=>k.streak>=7?1.5:k.streak>=3?1.2:1;
+const yt=q=>"https://www.youtube.com/results?search_query="+encodeURIComponent(q);
+const vidUrl=a=>yt(a.q||a.t+" for kids");
+const SPORTS={
+  soccer:{n:"Soccer",i:"⚽"},basketball:{n:"Basketball",i:"🏀"},cricket:{n:"Cricket",i:"🏏"},baseball:{n:"Baseball",i:"⚾"},
+  tennis:{n:"Tennis",i:"🎾"},swimming:{n:"Swimming",i:"🏊"},running:{n:"Running",i:"🏃"},biking:{n:"Biking",i:"🚲"},
+  gymnastics:{n:"Gymnastics",i:"🤸"},dance:{n:"Dance",i:"💃"},martial:{n:"Martial arts",i:"🥋"},football:{n:"Football",i:"🏈"}};
+// Inspire = stories and highlights that make kids want to play; Learn = skills and drills at their level
+function sportVids(id,band){
+  const n=SPORTS[id].n.toLowerCase();
+  if(band==="sprout")return [
+    {k:"Get moving",d:"Songs and games to move along with",q:`${n} songs and movement for toddlers`},
+    {key:"sport:"+id,k:"First skills",d:"Easy first steps for little ones",q:`${n} for preschoolers beginner`}];
+  if(band==="explorer")return [
+    {k:"Get inspired",d:"Amazing plays by kids like you",q:`kids ${n} amazing moments`},
+    {key:"sport:"+id,k:"Learn skills",d:"Fun drills to get better",q:`${n} drills for kids ages 6 to 9`},
+    {k:"Practice at home",d:"Practice in the backyard or living room",q:`${n} practice at home for kids`}];
+  return [
+    {k:"Get inspired",d:"Stories of athletes who never gave up",q:`${n} motivational video for young athletes`},
+    {key:"sport:"+id,k:"Learn skills",d:"Skills and technique, step by step",q:`${n} skills training for teens beginner`},
+    {k:"Train smarter",d:"Warm-ups and workouts to stay injury-free",q:`${n} workout and warm up for youth athletes`}];
+}
+// Hand-picked videos (suggested by Claude from web search, to be reviewed by a parent or the team)
+const ytw=id=>"https://www.youtube.com/watch?v="+id;
+const PICKS={
+  "sport:soccer":{id:"3DAWLIHC5Uo",t:"10 Essential Soccer Drills for Kids (U6–U12)"},
+  "sport:basketball":{id:"MRrNi7uHmaY",t:"6 Best Dribbling Drills for Kids"},
+  "sport:cricket":{id:"ibL83KJ07zM",t:"Batting for Beginners: Kids Cricket Coaching"},
+  "sport:baseball":{id:"in0n-SK1sxM",t:"Baseball Hitting Tutorial for Kids"},
+  "sport:tennis":{id:"KD8x5Tbjx0I",t:"Beginner Forehand and Backhand Lesson for Kids"},
+  "sport:swimming":{id:"hpTn2rMAJUw",t:"How to Learn Swimming for Kids"},
+  "sport:running":{id:"QdeaHVjRyxU",t:"Teaching Kids to Run Faster with Proper Form"},
+  "sport:biking":{id:"ADkm4qkXAj8",t:"Teaching Your Child to Ride a Bike (REI)"},
+  "sport:gymnastics":{id:"-0MmGwjDMLY",t:"How to Do a Cartwheel: Step-by-Step for Beginners"},
+  "sport:dance":{id:"plpyKJ1Qu2A",t:"Milkshake Song + More Dance-Alongs (GoNoodle)"},
+  "sport:martial":{id:"NAa-q_YIT1k",t:"Karate at Home for Kids: Beginner Lesson, Ages 3–9"},
+  "sport:football":{id:"XAZbn9B2M9Q",t:"How to Throw a Football (Easy for Kids)"},
+  "learn:sprout:0":{id:"KBMxpDbp51A",t:"Healthy Foods Rap with Cookie Monster (Sesame Street)"},
+  "learn:sprout:1":{id:"LhYtcadR9nw",t:"Squish the Fish (Cosmic Kids Yoga)"},
+  "learn:sprout:2":{id:"FhQ95Q79Hxo",t:"Meet the Numberblocks: Count 1 to 20"},
+  "learn:sprout:3":{id:"B5uT8acErVo",t:"Daniel Tiger: Sharing with Your Sister"},
+  "learn:explorer:0":{id:"RJkqB3JqqIE",t:"Why Are Foods Many Colors? (SciShow Kids)"},
+  "learn:explorer:1":{id:"1b6axyuaKcY",t:"Boom Chicka Boom (GoNoodle)"},
+  "learn:explorer:3":{id:"JcxTM7knO80",t:"Welcome to Crash Course Kids!"},
+  "learn:explorer:5":{id:"SLpEH1BSwMc",t:"Why Do We Need Sleep?"},
+  "learn:trail:0":{id:"S59kJBP0Kaw",t:"Growth Mindset with Dr. Carol Dweck (Khan Academy)"},
+  "learn:trail:1":{id:"lEXBxijQREo",t:"How Sugar Affects the Brain (TED-Ed)"},
+  "learn:trail:5":{id:"l-gQLqv9f4o",t:"A Pep Talk from Kid President to You"}
+};
+function pick(key){const o=(S.vids||{})[key];if(o&&o.id)return {...o,custom:true};const d=PICKS[key];return d?{...d,ok:!!(o&&o.ok)}:null}
+function slotUrl(v){const p=v.key&&pick(v.key);return p?ytw(p.id):yt(v.q)}
+// Learn good things: trusted kid channels by age band
+const LEARN={
+  sprout:[
+    {i:"🥦",t:"Why we eat healthy food",ch:"Sesame Street",q:"Sesame Street healthy food"},
+    {i:"🧘",t:"Yoga and calm breathing",ch:"Cosmic Kids Yoga",q:"Cosmic Kids Yoga"},
+    {i:"🔢",t:"Counting and numbers",ch:"Numberblocks",q:"Numberblocks"},
+    {i:"🤝",t:"Sharing and kindness",ch:"Daniel Tiger",q:"Daniel Tiger sharing kindness"},
+    {i:"🪥",t:"Brushing teeth and bedtime",ch:"Sesame Street",q:"Sesame Street brushing teeth bedtime"}],
+  explorer:[
+    {i:"🍎",t:"How food fuels your body",ch:"SciShow Kids",q:"SciShow Kids nutrition healthy food"},
+    {i:"💃",t:"Move and dance breaks",ch:"GoNoodle",q:"GoNoodle"},
+    {i:"🔬",t:"Science questions answered",ch:"SciShow Kids",q:"SciShow Kids"},
+    {i:"🌍",t:"How the world works",ch:"Crash Course Kids",q:"Crash Course Kids"},
+    {i:"💛",t:"Feelings and friendship",ch:"Sesame Street",q:"Sesame Street feelings friendship"},
+    {i:"😴",t:"Why sleep matters",ch:"SciShow Kids",q:"SciShow Kids why do we sleep"}],
+  trail:[
+    {i:"🧠",t:"Growth mindset",ch:"Khan Academy",q:"Khan Academy growth mindset"},
+    {i:"🍬",t:"How sugar affects your brain",ch:"TED-Ed",q:"TED-Ed how sugar affects the brain"},
+    {i:"📱",t:"Your brain on screens",ch:"TED-Ed",q:"TED-Ed screens brain teens"},
+    {i:"🧮",t:"Math you can use",ch:"Khan Academy",q:"Khan Academy math"},
+    {i:"🌱",t:"Habits that stick",ch:"TED-Ed",q:"TED-Ed habits"},
+    {i:"🤝",t:"Kindness and leadership",ch:"Kid President",q:"Kid President pep talk"}]
+};
+const vidLink=a=>`<a class="vid" href="${vidUrl(a)}" target="_blank" rel="noopener" aria-label="Watch a video: ${esc(a.t)}">▶</a>`;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2200)}
+function burst(el){
+  if(!el||matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const r=el.getBoundingClientRect();
+  for(let i=0;i<10;i++){const b=document.createElement("div");b.className="burst";b.textContent=i%3?"⭐":"✨";
+    b.style.left=(r.left+r.width/2-10)+"px";b.style.top=(r.top+r.height/2-10)+"px";
+    const a=Math.random()*Math.PI*2,d=60+Math.random()*60;b.style.setProperty("--dx",Math.cos(a)*d+"px");b.style.setProperty("--dy",Math.sin(a)*d-40+"px");
+    document.body.appendChild(b);setTimeout(()=>b.remove(),1000)}
+}
+function say(text){try{const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=1.2;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+
+function award(k,a){
+  const pts=Math.round(a.s*mult(k));
+  k.stars+=pts;k.lifetime+=pts;k.pillar[a.p]=(k.pillar[a.p]||0)+1;
+  S.goal.have=Math.min(S.goal.target,S.goal.have+pts);
+  return pts;
+}
+function pendingCount(){let n=0;for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")n++;return n+S.requests.filter(r=>r.state==="asked").length}
+
+function render(){
+  // profiles
+  const P=$("#profiles");
+  P.innerHTML=S.kids.map(k=>`<button class="chip" aria-pressed="${S.who===k.id}" data-who="${k.id}"><span class="av">${k.av}</span>${k.name}<span class="age">${k.age}</span></button>`).join("")+
+    `<button class="chip" aria-pressed="${S.who==="parent"}" data-who="parent"><span class="av">👪</span>Parent</button>`;
+  P.querySelectorAll("[data-who]").forEach(b=>b.onclick=()=>{S.who=b.dataset.who;S.tab=S.who==="parent"?"approve":"today";S.filter="all";save();render();window.scrollTo(0,0)});
+  // tabs
+  const isParent=S.who==="parent";
+  const tabs=isParent?[["approve","✅","Approve"],["videos","🎬","Videos"],["rewards","🎁","Rewards"],["family","📊","This week"]]:[["today","🗓️","Today"],["watch","🎬","Videos"],["shop","🎁","Shop"],["me","🏅","Me"]];
+  if(!tabs.some(t=>t[0]===S.tab))S.tab=tabs[0][0];
+  const pc=pendingCount();
+  $("#tabs").innerHTML=tabs.map(([id,i,l])=>`<button data-tab="${id}" ${S.tab===id?'aria-current="page"':""}><span class="i" aria-hidden="true">${i}</span>${l}${id==="approve"&&pc?`<span class="dot">${pc}</span>`:""}</button>`).join("");
+  $("#tabs").querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{S.tab=b.dataset.tab;save();render();window.scrollTo(0,0)});
+  const M=$("#main");
+  if(isParent){M.innerHTML=({approve:viewApprove,videos:viewVideos,rewards:viewRewards,family:viewFamily})[S.tab]();bindParent()}
+  else{const k=kid(S.who);M.innerHTML=({today:viewToday,watch:viewWatch,shop:viewShop,me:viewMe})[S.tab](k);bindKid(k)}
+}
+
+/* ---------- TODAY'S CHALLENGE: watch & try, learning quiz, food quiz ---------- */
+// Each question: q, opts, a (index of right answer), why (shown after answering)
+const QUIZ={
+  learn:{
+    sprout:[
+      {q:"How many apples? 🍎🍎🍎",opts:["2","3","4"],a:1,why:"Count them: one, two, three!"},
+      {q:"Which one is a circle?",opts:["⚪","🔺","🟦"],a:0,why:"A circle is round, with no corners."},
+      {q:"Which animal says moo?",opts:["🐄","🐶","🐱"],a:0,why:"Cows say moo. Dogs say woof and cats say meow."},
+      {q:"How many legs does a dog have?",opts:["2","4","6"],a:1,why:"Dogs walk on four legs."},
+      {q:"Which one is yellow?",opts:["🍌","🍇","🥦"],a:0,why:"Bananas are yellow. Grapes are purple and broccoli is green."},
+      {q:"What comes after 4?",opts:["3","5","7"],a:1,why:"1, 2, 3, 4, 5. Five comes next!"}],
+    explorer:[
+      {q:"What is 7 × 8?",opts:["54","56","63"],a:1,why:"7 × 8 = 56. A trick: 5, 6, 7, 8 → 56 = 7 × 8."},
+      {q:"Which planet is closest to the Sun?",opts:["Earth","Mars","Mercury"],a:2,why:"Mercury is the closest planet to the Sun."},
+      {q:"Plants make their own food using…",opts:["Sunlight","Moonlight","Music"],a:0,why:"Plants use sunlight, water and air to make food. This is called photosynthesis."},
+      {q:"How many continents are there?",opts:["5","7","9"],a:1,why:"There are 7: Africa, Antarctica, Asia, Australia, Europe, North America and South America."},
+      {q:"Water freezes at…",opts:["0 °F","32 °F","100 °F"],a:1,why:"Water freezes at 32 °F (0 °C)."},
+      {q:"Which word means the opposite of “brave”?",opts:["Bold","Scared","Strong"],a:1,why:"Brave means facing your fears. Scared is the opposite."}],
+    trail:[
+      {q:"Solve: 3x + 5 = 20",opts:["x = 3","x = 5","x = 7"],a:1,why:"Subtract 5 to get 3x = 15, then divide by 3: x = 5."},
+      {q:"What is 15% of 80?",opts:["8","12","15"],a:1,why:"10% of 80 is 8, and 5% is 4. 8 + 4 = 12."},
+      {q:"Which part of a cell makes energy?",opts:["Nucleus","Mitochondria","Cell wall"],a:1,why:"Mitochondria turn food into energy the cell can use."},
+      {q:"Which gas do plants take in from the air?",opts:["Oxygen","Carbon dioxide","Helium"],a:1,why:"Plants take in carbon dioxide and give off oxygen."},
+      {q:"You see lightning before you hear thunder because…",opts:["Light travels faster than sound","Thunder happens later","Your eyes are closer"],a:0,why:"Light is almost a million times faster than sound."},
+      {q:"Someone who is “resilient”…",opts:["Gives up easily","Bounces back from setbacks","Never makes mistakes"],a:1,why:"Resilience means recovering from setbacks and trying again. Athletes and learners both need it."}]
+  },
+  food:{
+    sprout:[
+      {q:"Which food helps you grow strong bones?",opts:["🥛 Milk","🍭 Candy"],a:0,why:"Milk has calcium, which makes bones strong."},
+      {q:"What is the best drink when you are thirsty?",opts:["💧 Water","🥤 Soda"],a:0,why:"Water is the best drink for your body. Soda has lots of sugar."},
+      {q:"Which one is a vegetable?",opts:["🥕 Carrot","🍩 Donut"],a:0,why:"Carrots are vegetables. They help your eyes and your body."},
+      {q:"Which snack gives you energy to play?",opts:["🍌 Banana","🍬 Candy"],a:0,why:"Fruit gives you energy and vitamins too."},
+      {q:"Eating foods of many colors is…",opts:["🌈 Good for you","👎 Bad for you"],a:0,why:"Each color has different good things for your body. Eat the rainbow!"},
+      {q:"What should we do before we eat?",opts:["🧼 Wash hands","📺 Watch TV"],a:0,why:"Washing hands keeps germs away from your food."}],
+    explorer:[
+      {q:"Why does your body need protein, like eggs, beans or fish?",opts:["To build and repair muscles","To make you sleepy","It doesn’t need it"],a:0,why:"Protein is your body’s building block. It helps muscles grow, especially after sports."},
+      {q:"Which drink usually has the most added sugar?",opts:["Water","Milk","Soda"],a:2,why:"One can of soda can have about 9 to 10 teaspoons of sugar."},
+      {q:"Vitamins in fruits and vegetables help your body…",opts:["Fight germs and heal","Grow taller overnight","Run on batteries"],a:0,why:"Vitamins like C help your body fight colds and heal cuts."},
+      {q:"About how much of your plate should be fruits and vegetables?",opts:["A tiny bit","About half","None"],a:1,why:"A healthy plate is about half fruits and vegetables."},
+      {q:"Why are whole grains, like oatmeal, good for you?",opts:["They give energy that lasts","They are sweeter","They have no taste"],a:0,why:"Whole grains have fiber, so their energy lasts longer and you stay full."},
+      {q:"Why is breakfast helpful?",opts:["It gives energy to focus at school","It makes the day shorter","It isn’t"],a:0,why:"A good breakfast fuels your brain and body for the morning."}],
+    trail:[
+      {q:"Which nutrient is your body’s main source of energy?",opts:["Carbohydrates","Vitamins","Salt"],a:0,why:"Carbs are the main fuel for your muscles and brain. Whole grains and fruit are the best sources."},
+      {q:"Why do calcium and vitamin D matter so much at your age?",opts:["Bones grow fastest in the teen years","They make you taller instantly","They don’t matter until adulthood"],a:0,why:"Most of your adult bone strength is built during your teen years."},
+      {q:"Iron, found in beans, spinach and meat, helps your body…",opts:["Carry oxygen in your blood","Grow hair faster","Digest sugar"],a:0,why:"Iron helps red blood cells carry oxygen. Low iron makes you tired, which hurts sports and focus."},
+      {q:"When do you actually need a sports drink?",opts:["During long, intense exercise","With every meal","Whenever you’re bored"],a:0,why:"For most activity, water is enough. Sports drinks add sugar you usually don’t need."},
+      {q:"Fiber in vegetables, beans and whole grains mainly helps…",opts:["Digestion and staying full","Build muscles","Whiten teeth"],a:0,why:"Fiber keeps your gut healthy and your energy steady."},
+      {q:"How much physical activity do kids and teens need each day?",opts:["15 minutes","At least 60 minutes","3 hours"],a:1,why:"Health experts recommend at least 60 minutes of activity every day."}]
+  }
+};
+for(const b in LEARN)LEARN[b].forEach((v,i)=>v.key=`learn:${b}:${i}`);
+const dayNo=()=>Math.floor(Date.now()/864e5);
+function todaysQs(kind,band){const bank=QUIZ[kind][band],d=dayNo(),out=[];for(let i=0;i<3;i++)out.push(bank[(d*3+i)%bank.length]);return out}
+function todaysSport(k){const list=k.sports.length?k.sports:["running"];return list[dayNo()%list.length]}
+const DQ={learn:{n:"Brain quiz",i:"🧠",sub:"3 questions to grow your brain",p:"learn"},food:{n:"Food quiz",i:"🥗",sub:"Why eating well matters",p:"eat"}};
+let QZ=null; // active quiz {kind,i,score,picked}
+function dstate(k){S.daily=S.daily||{};const d=S.daily[k.id];if(!d||d.day!==dayNo())S.daily[k.id]={day:dayNo(),tried:false,learn:null,food:null};return S.daily[k.id]}
+function daily(k){
+  const d=dstate(k);
+  if(QZ&&QZ.kid===k.id)return quizPanel(k);
+  const sp=todaysSport(k),v=sportVids(sp,k.band)[1],sport=SPORTS[sp];
+  const steps=[d.tried,d.learn!==null,d.food!==null].filter(Boolean).length;
+  const step=(n,done,icon,title,sub,actions)=>`<div class="dstep ${done?"done":""}"><span class="dnum">${done?"✓":n}</span><span class="dic" aria-hidden="true">${icon}</span><div class="txt"><b>${title}</b><small>${sub}</small></div><div class="dact">${actions}</div></div>`;
+  return `<div class="card daily"><div class="section-title"><h3>⭐ Today’s challenge</h3><span>${steps} of 3</span></div>
+    <div class="bar sun" style="margin:10px 0 4px"><i style="width:${steps/3*100}%"></i></div>
+    ${step(1,d.tried,sport.i,`Watch and try: ${sport.n}`,d.tried?"+15 ⭐ earned":"Watch the video, then go try it",
+      d.tried?"":`<a class="vid" href="${slotUrl(v)}" target="_blank" rel="noopener" aria-label="Watch ${sport.n} video">▶</a><button class="qbtn" data-dtry>I tried it</button>`)}
+    ${["learn","food"].map((kind,i)=>step(i+2,d[kind]!==null,DQ[kind].i,DQ[kind].n,d[kind]!==null?`${d[kind]} of 3 right · +${d[kind]*5+(d[kind]===3?5:0)} ⭐`:DQ[kind].sub,
+      d[kind]!==null?"":`<button class="qbtn" data-quiz="${kind}">Start</button>`)).join("")}
+    ${steps===3?`<p class="note" style="margin-top:8px;text-align:center;font-weight:800;color:var(--leaf)">Challenge complete! Come back tomorrow for a new one.</p>`:""}
+  </div>`;
+}
+function quizPanel(k){
+  const qs=todaysQs(QZ.kind,k.band),q=qs[QZ.i],ans=QZ.picked!==null;
+  return `<div class="card daily quiz"><div class="section-title"><h3>${DQ[QZ.kind].i} ${DQ[QZ.kind].n}</h3><span>Question ${QZ.i+1} of 3</span></div>
+    <p class="qq">${esc(q.q)} ${k.band==="sprout"?`<button class="speak" data-say="${esc(q.q)}" aria-label="Read the question aloud">🔊</button>`:""}</p>
+    <div class="opts ${k.band==="sprout"?"big":""}">${q.opts.map((o,i)=>`<button class="opt ${ans?(i===q.a?"right":i===QZ.picked?"wrong":""):""}" data-ans="${i}" ${ans?"disabled":""}>${esc(o)}</button>`).join("")}</div>
+    ${ans?`<div class="why ${QZ.picked===q.a?"ok":""}"><b>${QZ.picked===q.a?"Yes! 🎉":"Good try!"}</b> ${esc(q.why)}</div>
+      <button class="qbtn" style="width:100%;margin-top:10px" data-next>${QZ.i<2?"Next question":"See my Stars"}</button>`:""}
+    <button class="reset" style="margin-top:6px" data-qquit>Finish later</button></div>`;
+}
+function bindDaily(k){
+  const d=dstate(k);
+  const t=document.querySelector("[data-dtry]");if(t)t.onclick=()=>{d.tried=true;const p=award(k,{s:15,p:"move"});burst(t);toast(`+${p} Stars for trying ${SPORTS[todaysSport(k)].n}!`);save();render()};
+  document.querySelectorAll("[data-quiz]").forEach(b=>b.onclick=()=>{QZ={kid:k.id,kind:b.dataset.quiz,i:0,score:0,picked:null};render()});
+  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const q=todaysQs(QZ.kind,k.band)[QZ.i];QZ.picked=+b.dataset.ans;if(QZ.picked===q.a){QZ.score++;burst(b);if(k.band==="sprout")say("Yes! "+q.why)}render()});
+  const n=document.querySelector("[data-next]");if(n)n.onclick=()=>{if(QZ.i<2){QZ.i++;QZ.picked=null;render();return}
+    const sc=QZ.score,pts=sc*5+(sc===3?5:0);d[QZ.kind]=sc;let got=0;if(pts)got=award(k,{s:pts,p:DQ[QZ.kind].p});QZ=null;toast(sc===3?`Perfect! +${got} Stars`:`${sc} of 3 right · +${got} Stars`);save();render()};
+  const qq=document.querySelector("[data-qquit]");if(qq)qq.onclick=()=>{QZ=null;render()};
+}
+
+/* ---------- KID VIEWS ---------- */
+function header(k){
+  const b=BANDS[k.band];
+  const doneToday=Object.values(S.today[k.id]||{}).filter(v=>v==="done").length;
+  return `<div class="hello"><div class="chip" style="padding:0;border:0;background:none"><span class="av" style="width:52px;height:52px;font-size:30px">${k.av}</span></div>
+    <div><h2>Hi ${k.name}!</h2><p>${b.name} · ${doneToday} done today${mult(k)>1?` · ${mult(k)}x streak bonus`:""}</p></div></div>
+  <div class="stats"><div class="stat stars"><b>${k.stars}</b><span>Stars</span></div><div class="stat streak"><b>${k.streak}🔥</b><span>Day streak</span></div><div class="stat goal"><b>${Math.round(S.goal.have/S.goal.target*100)}%</b><span>Family goal</span></div></div>`;
+}
+function stateLabel(k,st){
+  if(st==="done")return "✓ Done";
+  if(st==="pending")return "Waiting";
+  return k.band==="trail"?"I did it":"Done!";
+}
+function viewToday(k){
+  const st=S.today[k.id]||{};
+  if(k.band==="sprout"){
+    const grown=Object.values(st).filter(v=>v==="done").length;
+    const sprout=["🌰","🌱","🌿","🪴","🌳","🌳"][Math.min(grown,5)];
+    return header(k)+daily(k)+`
+    <div class="card pet"><div class="sprout" id="sprout" aria-hidden="true">${sprout}</div>
+      <div class="grow" style="flex:1"><b style="font-family:var(--display);font-size:18px">Sunny the sprout</b>
+      <p class="note">Sunny grows each time ${k.name} does a healthy thing. Ask a grown-up to tap “Done!” with you.</p>
+      <div class="bar" style="margin-top:8px"><i style="width:${Math.min(100,grown/5*100)}%"></i></div></div></div>
+    <div class="section-title"><h3>Today’s fun</h3><span>Tap 🔊 to hear it</span></div>
+    <div class="tiles">${acts(k).map(a=>`<div class="tile p-${a.p} ${st[a.id]||""}">
+      ${st[a.id]?`<span class="badge">${st[a.id]==="done"?"⭐ Yay!":"⏳"}</span>`:""}
+      <span class="big" aria-hidden="true">${a.icon}</span>${esc(a.t)}<span class="st">+${a.s} ⭐</span>
+      <div class="row"><button class="speak" data-say="${esc(a.t)}" aria-label="Read aloud: ${esc(a.t)}">🔊</button>${vidLink(a)}
+      <button class="qbtn ${st[a.id]||""}" data-act="${a.id}" ${st[a.id]?"disabled":""}>${stateLabel(k,st[a.id])}</button></div></div>`).join("")}</div>
+    <p class="demo">For ages 2–5 a grown-up confirms each one in the Parent view.</p>`;
+  }
+  const list=acts(k).filter(a=>S.filter==="all"||a.p===S.filter);
+  const total=acts(k).length,done=Object.values(st).filter(v=>v==="done").length;
+  return header(k)+daily(k)+`
+  <div class="card"><div class="section-title"><h3>Today’s quests</h3><span>${done} of ${total}</span></div>
+    <div class="bar" style="margin-top:10px"><i style="width:${done/total*100}%"></i></div>
+    ${k.band==="trail"?`<p class="note" style="margin-top:10px">You log your own quests. Parents can spot-check.</p>`:`<p class="note" style="margin-top:10px">Tap Done and a parent will give you your Stars.</p>`}</div>
+  <div class="pillars" role="group" aria-label="Filter by habit"><button class="pfilter" data-f="all" aria-pressed="${S.filter==="all"}">All</button>
+    ${Object.entries(PILLARS).map(([id,p])=>`<button class="pfilter" data-f="${id}" aria-pressed="${S.filter===id}">${p.icon} ${p.name}</button>`).join("")}</div>
+  <div class="quests">${list.map(a=>`<div class="quest"><div class="ic p-${a.p}" aria-hidden="true">${a.icon}</div>
+    <div class="txt"><b>${esc(a.t)}</b><small>${PILLARS[a.p].name} · +${Math.round(a.s*mult(k))} ⭐</small></div>
+    ${vidLink(a)}<button class="qbtn ${st[a.id]||""}" data-act="${a.id}" ${st[a.id]?"disabled":""}>${stateLabel(k,st[a.id])}</button></div>`).join("")}</div>`;
+}
+function viewWatch(k){
+  const byP={};acts(k).forEach(a=>(byP[a.p]=byP[a.p]||[]).push(a));
+  const vrow=(icon,title,sub,v,cls="")=>{const p=v.key&&pick(v.key);if(p)sub=p.t+(p.ok||p.custom?" · ✓ Parent approved":"");return `<a class="vrow" href="${slotUrl(v)}" target="_blank" rel="noopener"><span class="ic ${cls}" aria-hidden="true">${icon}</span><span style="flex:1;min-width:0"><b style="display:block">${esc(title)}</b><small style="color:var(--muted);font-weight:700;font-size:12px">${esc(sub)}</small></span><span class="play">▶ Watch</span></a>`};
+  return `<div><h2 style="font-size:24px">Watch and learn</h2><p class="note">Videos picked for ${k.name}’s sports and age, plus a how-to for every activity.</p></div>
+  <div class="card"><div class="section-title"><h3>🏆 My sports</h3><span>Tap to pick</span></div>
+    <div class="pillars" style="margin-top:10px" role="group" aria-label="Pick favorite sports">${Object.entries(SPORTS).map(([id,sp])=>`<button class="pfilter" data-sport="${id}" aria-pressed="${k.sports.includes(id)}">${sp.i} ${sp.n}</button>`).join("")}</div></div>
+  ${k.sports.length?k.sports.map(id=>`<div class="section-title"><h3>${SPORTS[id].i} ${SPORTS[id].n}</h3></div>
+    <div class="vlist">${sportVids(id,k.band).map(v=>vrow(SPORTS[id].i,v.k,v.d,v,"p-move")).join("")}</div>`).join(""):`<p class="empty">Pick a sport above to get videos for it.</p>`}
+  <div class="section-title"><h3>🌟 Learn good things</h3><span>Kid-friendly channels</span></div>
+  <div class="vlist">${LEARN[k.band].map(v=>vrow(v.i,v.t,v.ch,v,"p-learn")).join("")}</div>
+  <div class="section-title"><h3>🎬 How to do today’s activities</h3></div>
+  ${Object.entries(byP).map(([p,list])=>`<div class="section-title"><h3 style="font-size:15px;color:var(--muted)">${PILLARS[p].icon} ${PILLARS[p].name}</h3></div>
+  <div class="vlist">${list.map(a=>`<a class="vrow" href="${vidUrl(a)}" target="_blank" rel="noopener"><span class="ic p-${a.p}" aria-hidden="true">${a.icon}</span><b>${esc(a.t)}</b><span class="play">▶ Watch</span></a>`).join("")}</div>`).join("")}
+  <p class="demo">Prototype links open a YouTube search. In the real app, parents approve a hand-picked, kid-safe video for each one.</p>`;
+}
+function viewShop(k){
+  const mine=S.requests.filter(r=>r.kid===k.id);
+  return `<div class="section-title"><h3>Family reward shop</h3><span class="cost">${k.stars} ⭐ to spend</span></div>
+  <div class="shop">${S.rewards.map(r=>{const asked=mine.find(q=>q.reward===r.id&&q.state==="asked");
+    return `<div class="reward"><span class="big" aria-hidden="true">${r.icon}</span><b>${esc(r.t)}</b><span class="cost">${r.c} ⭐</span>
+    <button class="rbtn" data-buy="${r.id}" ${asked||k.stars<r.c?"disabled":""}>${asked?"Asked a parent":k.stars<r.c?`${r.c-k.stars} more ⭐`:"Get it"}</button></div>`}).join("")}</div>
+  <div class="card"><div class="section-title"><h3>🏞️ ${esc(S.goal.t)}</h3><span>${S.goal.have} / ${S.goal.target} ⭐</span></div>
+    <div class="bar sky" style="margin-top:10px"><i style="width:${S.goal.have/S.goal.target*100}%"></i></div>
+    <p class="note" style="margin-top:8px">Every Star anyone in the family earns also counts toward this goal.</p></div>`;
+}
+function viewMe(k){
+  const max=Math.max(1,...Object.values(k.pillar));
+  return `<div class="hello"><span class="av" style="width:64px;height:64px;font-size:38px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2)">${k.av}</span>
+    <div><h2>${k.name}</h2><p>${BANDS[k.band].name} (ages ${BANDS[k.band].ages}) · ${k.lifetime} Stars all time</p></div></div>
+  <div class="card"><div class="section-title"><h3>Badges</h3><span>${BADGES.filter(b=>b.test(k)).length} of ${BADGES.length}</span></div>
+    <div class="badges" style="margin-top:12px">${BADGES.map(b=>`<div class="bdg ${b.test(k)?"on":""}"><span class="m" aria-hidden="true">${b.icon}</span>${b.n}</div>`).join("")}</div></div>
+  <div class="card"><div class="section-title"><h3>My habits this week</h3></div>
+    <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>`;
+}
+function bindKid(k){
+  bindDaily(k);
+  document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{const id=b.dataset.sport;k.sports=k.sports.includes(id)?k.sports.filter(x=>x!==id):[...k.sports,id];save();render()});
+  document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;save();render()});
+  document.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
+  document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+    const a=actById(b.dataset.act);S.today[k.id]=S.today[k.id]||{};
+    if(k.band==="trail"){S.today[k.id][a.id]="done";const p=award(k,a);burst(b);toast(`+${p} Stars! Nice work, ${k.name}.`)}
+    else{S.today[k.id][a.id]="pending";burst(b);toast(k.band==="sprout"?"Yay! A grown-up will give you your Stars.":"Sent to a parent for Stars!");if(k.band==="sprout")say("Great job, "+k.name+"!")}
+    save();render();
+  });
+  document.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{
+    const r=rewardById(b.dataset.buy);if(k.stars<r.c)return;
+    S.requests.push({id:"q"+Date.now(),kid:k.id,reward:r.id,state:"asked"});burst(b);toast("Asked a parent for: "+r.t);save();render();
+  });
+}
+
+/* ---------- PARENT VIEWS ---------- */
+function viewApprove(){
+  const items=[];for(const id in S.today)for(const a in S.today[id])if(S.today[id][a]==="pending")items.push([id,a]);
+  const reqs=S.requests.filter(r=>r.state==="asked");
+  return `<div><h2 style="font-size:24px">Good evening</h2><p class="note">Confirm what your kids did today. Stars go to them right away.</p></div>
+  <div class="card"><div class="section-title"><h3>Activities</h3><span>${items.length} waiting</span></div>
+    <div class="list">${items.length?items.map(([id,aid])=>{const k=kid(id),a=actById(aid);return `<div class="appr"><div class="ic p-${a.p}" style="width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;flex:none" aria-hidden="true">${a.icon}</div>
+      <div class="grow"><div class="who">${k.av} ${k.name}</div><b style="font-size:15px">${esc(a.t)}</b></div>
+      <button class="no" data-deny="${id}|${aid}">Not yet</button><button class="ok" data-approve="${id}|${aid}">+${Math.round(a.s*mult(k))} ⭐</button></div>`}).join(""):`<p class="empty">All caught up. Switch to Mia or Leo and tap Done on a quest to see it here.</p>`}</div></div>
+  <div class="card"><div class="section-title"><h3>Reward requests</h3><span>${reqs.length} waiting</span></div>
+    <div class="list">${reqs.length?reqs.map(q=>{const k=kid(q.kid),r=rewardById(q.reward);return `<div class="appr"><span style="font-size:28px" aria-hidden="true">${r.icon}</span>
+      <div class="grow"><div class="who">${k.av} ${k.name} · has ${k.stars} ⭐</div><b style="font-size:15px">${esc(r.t)}</b></div>
+      <button class="no" data-rdeny="${q.id}">Later</button><button class="ok" data-rok="${q.id}">Give it (−${r.c})</button></div>`}).join(""):`<p class="empty">No requests right now.</p>`}</div></div>`;
+}
+let VEDIT=null;
+function viewVideos(){
+  const row=(key,icon,label)=>{const p=pick(key);if(!p)return "";const st=p.custom?"Your pick":p.ok?"Approved":"Needs review";
+    return `<div class="vslot"><div class="row"><span style="font-size:24px" aria-hidden="true">${icon}</span><div class="grow"><b>${esc(label)}</b><a class="vt" href="${ytw(p.id)}" target="_blank" rel="noopener">▶ ${esc(p.t)}</a></div><span class="tag st-${st.replace(/ /g,"").toLowerCase()}">${st}</span></div>
+    ${VEDIT===key?`<form class="addform" data-vform="${key}" style="margin-top:8px"><input id="vin" placeholder="Paste a YouTube link" required><button class="ok" type="submit">Save</button></form>`:
+    `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:6px">${p.ok||p.custom?"":`<button class="ok" data-vok="${key}">Approve</button>`}<button class="no" data-vedit="${key}">Replace</button>${p.custom?`<button class="no" data-vreset="${key}">Use suggestion</button>`:""}</div>`}</div>`};
+  const sports=Object.entries(SPORTS).map(([id,sp])=>row("sport:"+id,sp.i,sp.n+" skills")).join("");
+  const learn=Object.entries(BANDS).map(([b,band])=>`<h4 class="vh">${band.name} (${band.ages})</h4>`+LEARN[b].map(v=>row(v.key,v.i,v.t)).join("")).join("");
+  const n=Object.keys(PICKS).length,ok=Object.keys(PICKS).filter(k=>{const p=pick(k);return p.ok||p.custom}).length;
+  return `<div><h2 style="font-size:24px">Video library</h2><p class="note">Every video kids see is picked ahead of time. Watch each one, then approve it or paste a link to a better one.</p></div>
+  <div class="card"><div class="section-title"><h3>Reviewed</h3><span>${ok} of ${n}</span></div><div class="bar" style="margin-top:10px"><i style="width:${ok/n*100}%"></i></div></div>
+  <div class="card"><h3 style="font-size:18px">🏆 Sports skills</h3><div class="list" style="margin-top:6px">${sports}</div></div>
+  <div class="card"><h3 style="font-size:18px">🌟 Learn good things</h3><div class="list" style="margin-top:6px">${learn}</div></div>
+  <p class="demo">Suggested videos were found with a web search and still need a grown-up to watch them. Slots without a pick use a YouTube search for now.</p>`;
+}
+function viewRewards(){
+  return `<div><h2 style="font-size:24px">Rewards</h2><p class="note">You decide what Stars can buy. Real-world treats and time together work best.</p></div>
+  <div class="card"><div class="list">${S.rewards.map(r=>`<div class="appr"><span style="font-size:26px" aria-hidden="true">${r.icon}</span><b class="grow" style="font-size:15px">${esc(r.t)}</b>
+    <div class="price"><button data-dec="${r.id}" aria-label="Lower price">−</button><span>${r.c} ⭐</span><button data-inc="${r.id}" aria-label="Raise price">+</button></div></div>`).join("")}</div></div>
+  <div class="card"><h3 style="font-size:18px;margin-bottom:10px">Add a reward</h3>
+    <form class="addform" id="addr"><input id="rname" placeholder="e.g. Bake cookies together" required maxlength="48"><input id="rcost" type="number" min="5" max="1000" step="5" value="60" aria-label="Price in Stars"><button class="ok" type="submit">Add</button></form></div>
+  <div class="card"><div class="section-title"><h3>Family goal</h3><span>${S.goal.have} / ${S.goal.target} ⭐</span></div>
+    <p class="note" style="margin-top:4px">${esc(S.goal.t)}</p><div class="bar sky" style="margin-top:10px"><i style="width:${S.goal.have/S.goal.target*100}%"></i></div></div>`;
+}
+function viewFamily(){
+  return `<div><h2 style="font-size:24px">This week</h2><p class="note">Sample weekly summary. In the real app this arrives every Sunday.</p></div>
+  <div class="card">${S.kids.map(k=>{const max=Math.max(1,...Object.values(k.pillar));return `<div class="kidsum">
+    <div class="row"><span style="font-size:26px" aria-hidden="true">${k.av}</span><div class="grow"><b>${k.name}, ${k.age}</b> <span class="tag">${BANDS[k.band].name}</span></div><span class="cost">${k.stars} ⭐</span></div>
+    ${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}
+    <p class="note">${tip(k)}</p></div>`}).join("")}</div>
+  <div class="card"><h3 style="font-size:18px">Privacy</h3><p class="note" style="margin-top:6px">No ads, no chat with strangers, no tracking. Kid profiles use a first name and an avatar only. In the real app you can export or delete all family data from here.</p></div>`;
+}
+function tip(k){const e=Object.entries(PILLARS).map(([id])=>[id,k.pillar[id]||0]).sort((a,b)=>a[1]-b[1])[0];
+  return `Idea: ${k.name} did the least in “${PILLARS[e[0]].name}”. Try doing one together this weekend.`}
+function bindParent(){
+  S.vids=S.vids||{};
+  document.querySelectorAll("[data-vok]").forEach(b=>b.onclick=()=>{S.vids[b.dataset.vok]={ok:true};toast("Approved");save();render()});
+  document.querySelectorAll("[data-vedit]").forEach(b=>b.onclick=()=>{VEDIT=b.dataset.vedit;render();const i=$("#vin");if(i)i.focus()});
+  document.querySelectorAll("[data-vreset]").forEach(b=>b.onclick=()=>{delete S.vids[b.dataset.vreset];toast("Back to the suggested video");save();render()});
+  document.querySelectorAll("[data-vform]").forEach(f=>f.onsubmit=e=>{e.preventDefault();const v=$("#vin").value.trim();
+    const m=v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)||v.match(/^([\w-]{11})$/);
+    if(!m){toast("That doesn’t look like a YouTube link");return}
+    S.vids[f.dataset.vform]={id:m[1],t:"Your pick ("+m[1]+")",ok:true};VEDIT=null;toast("Saved. Kids will see this video.");save();render()});
+  document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.approve.split("|");const k=kid(id);S.today[id][aid]="done";const p=award(k,actById(aid));burst(b);toast(`${k.name} got ${p} Stars`);save();render()});
+  document.querySelectorAll("[data-deny]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.deny.split("|");delete S.today[id][aid];toast("Moved back to the quest list");save();render()});
+  document.querySelectorAll("[data-rok]").forEach(b=>b.onclick=()=>{const q=S.requests.find(x=>x.id===b.dataset.rok),k=kid(q.kid),r=rewardById(q.reward);
+    if(k.stars<r.c){toast(`${k.name} needs ${r.c-k.stars} more Stars`);return}k.stars-=r.c;q.state="given";burst(b);toast(`${r.t} for ${k.name}!`);save();render()});
+  document.querySelectorAll("[data-rdeny]").forEach(b=>b.onclick=()=>{S.requests.find(x=>x.id===b.dataset.rdeny).state="later";toast("Saved for later");save();render()});
+  document.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.inc);r.c=Math.min(1000,r.c+10);save();render()});
+  document.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.dec);r.c=Math.max(10,r.c-10);save();render()});
+  const f=$("#addr");if(f)f.onsubmit=e=>{e.preventDefault();const n=$("#rname").value.trim(),c=parseInt($("#rcost").value,10)||60;if(!n)return;
+    S.rewards.push({id:"r"+Date.now(),icon:"🎁",t:n,c:Math.max(5,Math.min(1000,c))});toast("Reward added to the shop");save();render()};
+}
+// In-app player: videos with a known id play in an embedded YouTube player (no related videos from other channels)
+function openPlayer(id,title,url){$("#ptitle").textContent=title||"Video";$("#pout").href=url;
+  $("#pframe").src="https://www.youtube-nocookie.com/embed/"+id+"?autoplay=1&playsinline=1&rel=0&modestbranding=1";$("#player").hidden=false}
+function closePlayer(){$("#pframe").src="about:blank";$("#player").hidden=true}
+$("#pclose").onclick=closePlayer;$("#player").onclick=e=>{if(e.target.id==="player")closePlayer()};
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#player").hidden)closePlayer()});
+document.addEventListener("click",e=>{const a=e.target.closest("a[href*='youtube.com/watch?v=']");if(!a)return;
+  const id=new URL(a.href).searchParams.get("v");if(!id)return;e.preventDefault();
+  const t=(a.querySelector("small")&&a.querySelector("small").textContent.split(" · ")[0])||a.textContent.replace("▶","").trim()||a.getAttribute("aria-label");
+  openPlayer(id,t,a.href)});
+let armed=false;
+$("#reset").onclick=()=>{const b=$("#reset");if(!armed){armed=true;b.textContent="Tap again to reset";setTimeout(()=>{armed=false;b.textContent="Reset demo"},2500);return}
+  S=seed();save();armed=false;b.textContent="Reset demo";render();toast("Demo reset")};
+render();
+</script>
+
+</body>
+</html>
