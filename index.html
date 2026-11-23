@@ -992,7 +992,9 @@ $("#kidsheet").onclick=e=>{if(e.target.id==="kidsheet")closeKid()};
    Forgot password emails a reset link through Firebase Authentication (free). Paste the project's Web API key into AUTH_KEY to switch it on.
    The password is also kept on this device as a salted hash, so the lock works offline. ---------- */
 const AUTH_KEY="";
-const authOn=()=>!!AUTH_KEY;
+/* Demo family: no email anywhere (password set up and change only). The email code stays for real families. */
+const noEmail=()=>!!S.demo;
+const authOn=()=>!!AUTH_KEY&&!noEmail();
 async function fb(path,body){let r;try{r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${path}?key=${AUTH_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})}catch(e){throw new Error("NETWORK")}
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(((j.error&&j.error.message)||"ERROR").split(" ")[0]);return j}
 async function hashPw(pw,salt){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(salt+"|"+pw));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
@@ -1017,16 +1019,16 @@ async function finishSetup(btn){const email=SF.email.trim();
   if(err){btn.disabled=false;btn.textContent="Let's go! 🚀";toast(err);return}
   S.settings.email=email;S.settings.authLinked=authOn();await storePw(SF.pw);SF={email:"",pw:"",pw2:""};
   S.setup=false;S.who=S.kids[0].id;S.tab="today";save();render();window.scrollTo(0,0);toast("All set! Tap Parent and use your password for settings.")}
-const signoutCard=()=>`<div class="card"><div class="row" style="gap:10px;flex-wrap:wrap"><div class="grow"><b style="font-size:16px">👪 Signed in</b><small class="note" style="display:block">${S.settings.email?esc(S.settings.email):"No email yet"}</small></div>
+const signoutCard=()=>`<div class="card"><div class="row" style="gap:10px;flex-wrap:wrap"><div class="grow"><b style="font-size:16px">👪 Signed in</b>${noEmail()?"":`<small class="note" style="display:block">${S.settings.email?esc(S.settings.email):"No email yet"}</small>`}</div>
     <button class="no" data-lockparent>Lock Parent area</button>${S.settings.pw?`<button class="ok" data-signout>Sign out</button>`:""}</div>
-    <p class="note" style="margin-top:6px">${S.settings.pw?"<b>Lock</b> goes back to the kids' screens. <b>Sign out</b> closes the app for everyone until you sign in again with your email and password. Your family's Stars and settings stay saved on this device.":"Lock goes back to the kids' screens. Set a password below to be able to sign out."}</p></div>
-  ${S.settings.pw?`<div class="card"><h3 style="font-size:18px">📧 Change email</h3><p class="note" style="margin-top:6px">Password reset emails go to <b>${esc(S.settings.email)}</b>.${S.settings.pendingEmail?` Waiting for you to confirm <b>${esc(S.settings.pendingEmail)}</b> from that inbox.`:""}</p>
+    <p class="note" style="margin-top:6px">${S.settings.pw?"<b>Lock</b> goes back to the kids' screens. <b>Sign out</b> closes the app for everyone until you sign in again with your "+(noEmail()?"":"email and ")+"password. Your family's Stars and settings stay saved on this device.":"Lock goes back to the kids' screens. Set a password below to be able to sign out."}</p></div>
+  ${!noEmail()&&S.settings.pw?`<div class="card"><h3 style="font-size:18px">📧 Change email</h3><p class="note" style="margin-top:6px">Password reset emails go to <b>${esc(S.settings.email)}</b>.${S.settings.pendingEmail?` Waiting for you to confirm <b>${esc(S.settings.pendingEmail)}</b> from that inbox.`:""}</p>
     <div class="pwf"><label>New email<input id="nemail" type="email" autocomplete="email" inputmode="email"></label><label>Your password<input id="epw" type="password" autocomplete="current-password"></label>
     <button class="ok" data-emailsave style="align-self:flex-start">Change email</button></div></div>`:""}`;
 function pwCard(){const p=!!S.settings.pw;
   return `<div class="card"><div class="section-title"><h3>🔒 Parent password</h3><span class="tag ${p?"st-approved":""}">${p?"On":"Not set"}</span></div>
-  <p class="note" style="margin-top:6px">${p?`Kids need your password to open the Parent area. Reset email: <b>${esc(maskEmail(S.settings.email||""))}</b>${S.settings.authLinked?"":` <span class="tag">email reset not on yet</span>`}`:"Set a password so kids can't open the Parent area. For now they get a grown-up math question."}</p>
-  <div class="pwf">${p?`<label>Current password<input id="cpw" type="password" autocomplete="current-password"></label>`:`<label>Your email<input id="cemail" type="email" autocomplete="email" value="${esc(S.settings.email||"")}"></label>`}
+  <p class="note" style="margin-top:6px">${p&&noEmail()?"Kids need your password to open the Parent area.":p?`Kids need your password to open the Parent area. Reset email: <b>${esc(maskEmail(S.settings.email||""))}</b>${S.settings.authLinked?"":` <span class="tag">email reset not on yet</span>`}`:"Set a password so kids can't open the Parent area. For now they get a grown-up math question."}</p>
+  <div class="pwf">${p?`<label>Current password<input id="cpw" type="password" autocomplete="current-password"></label>`:noEmail()?"":`<label>Your email<input id="cemail" type="email" autocomplete="email" value="${esc(S.settings.email||"")}"></label>`}
     <label>New password <small class="note" style="font-weight:700">(8 or more characters)</small><input id="npw" type="password" autocomplete="new-password"></label>
     <label>Type it again<input id="npw2" type="password" autocomplete="new-password"></label>
     <button class="ok" data-pwsave style="align-self:flex-start">${p?"Change password":"Set password"}</button></div></div>`}
@@ -1037,7 +1039,7 @@ async function savePwCard(btn){const npw=$("#npw").value,prob=pwProblem(npw,$("#
       if(!(await pwMatches(cur))){toast("Current password isn't right");return}
       if(authOn()){try{const j=await fb("signInWithPassword",{email:S.settings.email,password:cur,returnSecureToken:true});await fb("update",{idToken:j.idToken,password:npw,returnSecureToken:true});S.settings.authLinked=true}
         catch(e){const err=await linkAccount(S.settings.email,npw);if(err){toast(err);return}S.settings.authLinked=true}}
-    }else{const email=$("#cemail").value.trim();if(!okEmail(email)){toast("Please type your email");return}
+    }else if(noEmail()){/* demo: password only */}else{const email=$("#cemail").value.trim();if(!okEmail(email)){toast("Please type your email");return}
       const err=await linkAccount(email,npw);if(err){toast(err);return}S.settings.email=email;S.settings.authLinked=authOn()}
     await storePw(npw);save();render();toast("Password saved")
   }finally{btn.disabled=false}}
@@ -1058,7 +1060,7 @@ function renderWelcome(){document.querySelector("nav").hidden=true;$("#profiles"
 function renderSignin(){document.querySelector("nav").hidden=true;$("#profiles").hidden=true;document.body.classList.remove("kidmode");document.body.style.setProperty("--kc","var(--leaf)");$("#tabs").innerHTML="";
   $("#main").innerHTML=`<div class="setup">
   <div class="hero" style="--kc:var(--leaf)"><div class="hero-txt"><span class="eyebrow">Signed out</span><h2>Welcome back!</h2><p>A parent needs to sign in to start ${APP_NAME}.</p></div><span class="hero-art" aria-hidden="true">🌱</span></div>
-  <div class="card"><div class="pwf" style="margin-top:0"><label>Email<input id="iemail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>
+  <div class="card"><div class="pwf" style="margin-top:0">${noEmail()?"<!--":""}<label>Email<input id="iemail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>${noEmail()?"-->":""}
     <label>Password<input id="ipw" type="password" autocomplete="current-password"></label></div>
     <button class="bigbtn" data-signin style="margin-top:12px">Sign in</button>
     <button class="linkbtn" data-siforgot style="display:block;margin:8px auto 0">Forgot password?</button>${appleBtn()}</div>
@@ -1066,8 +1068,8 @@ function renderSignin(){document.querySelector("nav").hidden=true;$("#profiles")
   <button class="linkbtn" data-sinew>Not your family? Start a new one on this device</button></div>`;
   $("#ipw").onkeydown=e=>{if(e.key==="Enter")doSignin($("[data-signin]"))}}
 function signedIn(){S.signedOut=false;S.who="parent";S.tab="approve";save();render();window.scrollTo(0,0);toast("Welcome back!")}
-async function doSignin(btn){const em=$("#iemail").value,pw=$("#ipw").value;
-  if(!sameEmail(em,S.settings.email)&&!sameEmail(em,S.settings.pendingEmail)){toast("That email doesn't match this family");return}
+async function doSignin(btn){const em=noEmail()?S.settings.email:$("#iemail").value,pw=$("#ipw").value;
+  if(!noEmail()&&!sameEmail(em,S.settings.email)&&!sameEmail(em,S.settings.pendingEmail)){toast("That email doesn't match this family");return}
   if(!pw){toast("Please type your password");return}
   btn.disabled=true;const ok=await checkPw(pw);btn.disabled=false;
   if(ok){if(sameEmail(em,S.settings.pendingEmail)){if(!authOn()){S.settings.email=S.settings.pendingEmail;delete S.settings.pendingEmail}else try{await fb("signInWithPassword",{email:S.settings.pendingEmail,password:pw,returnSecureToken:true});S.settings.email=S.settings.pendingEmail;delete S.settings.pendingEmail}catch(e){}}signedIn()}else{toast("That password isn't right");$("#ipw").value="";$("#ipw").focus()}}
