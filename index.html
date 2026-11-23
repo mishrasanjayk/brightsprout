@@ -140,8 +140,10 @@ nav .dot{position:absolute;top:6px;left:calc(50% + 8px);min-width:18px;height:18
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:800;font-size:14px;transition:.25s;z-index:60;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .burst{position:fixed;pointer-events:none;z-index:30;font-size:22px;animation:fly .9s ease-out forwards}
+.confetti{position:fixed;inset:0;pointer-events:none;z-index:60;overflow:hidden}.confetti i{position:absolute;top:-16px;animation-name:confall;animation-timing-function:cubic-bezier(.3,.6,.6,1);animation-fill-mode:forwards}
+@keyframes confall{from{transform:translate(0,0) rotate(0);opacity:1}85%{opacity:1}to{transform:translate(var(--x),105vh) rotate(var(--r));opacity:0}}
 @keyframes fly{from{transform:translate(0,0) scale(.6);opacity:1}to{transform:translate(var(--dx),var(--dy)) scale(1.2);opacity:0}}
-@media (prefers-reduced-motion: reduce){.burst{display:none}.toast,.bar i,.pet .sprout{transition:none}}
+@media (prefers-reduced-motion: reduce){.burst,.confetti{display:none}.toast,.bar i,.pet .sprout{transition:none}}
 .vid{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--berry);color:#fff;text-decoration:none;font-size:15px;font-weight:800}
 .vlist{display:flex;flex-direction:column;gap:8px}
 .vrow{display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)}
@@ -511,6 +513,42 @@ function burst(el){
     document.body.appendChild(b);setTimeout(()=>b.remove(),1000)}
 }
 function say(text){try{const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=1.2;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+/* ---------- HAPPY SOUNDS + CONFETTI: tones made with Web Audio (no sound files). iOS only allows audio after a tap, so we unlock on the first touch. ---------- */
+const FX={ctx:null};
+const soundOn=()=>S.settings.sound!==false;
+function actx(){
+  try{if(!FX.ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;FX.ctx=new AC()}
+    if(FX.ctx.state!=="running")FX.ctx.resume();return FX.ctx}catch(e){return null}
+}
+function fxUnlock(){if(!soundOn())return;const c=actx();if(!c)return;
+  try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}}
+["touchend","pointerdown","keydown"].forEach(ev=>document.addEventListener(ev,fxUnlock,{passive:true,capture:true}));
+function tone(c,f,at,dur,type,vol,slide){
+  const o=c.createOscillator(),g=c.createGain();o.type=type||"sine";o.frequency.setValueAtTime(f,at);if(slide)o.frequency.exponentialRampToValueAtTime(slide,at+dur);
+  g.gain.setValueAtTime(0.0001,at);g.gain.exponentialRampToValueAtTime(vol||.18,at+.012);g.gain.exponentialRampToValueAtTime(0.0001,at+dur);
+  o.connect(g);g.connect(c.destination);o.start(at);o.stop(at+dur+.05)}
+const NOTE={C5:523.25,E5:659.25,G5:783.99,A5:880,B5:987.77,C6:1046.5,D6:1174.66,E6:1318.51,G6:1567.98,C7:2093};
+function sfx(kind){
+  if(!soundOn())return;const c=actx();if(!c)return;const t=c.currentTime+.02,N=NOTE;
+  if(kind==="correct"){tone(c,N.A5,t,.12,"triangle",.16);tone(c,N.E6,t+.08,.2,"triangle",.16)}
+  else if(kind==="done"){[N.C5,N.E5,N.G5].forEach((f,i)=>tone(c,f,t+i*.09,.18,"triangle",.17));tone(c,N.C6,t+.27,.35,"triangle",.17)}
+  else if(kind==="stars"){[N.C6,N.E6,N.G6,N.C7].forEach((f,i)=>{tone(c,f,t+i*.07,.3,"sine",.13);tone(c,f*2,t+i*.07,.12,"sine",.04)});tone(c,N.G6,t+.32,.5,"sine",.08)}
+  else if(kind==="buy"){tone(c,N.B5,t,.09,"square",.07);tone(c,N.E6,t+.09,.4,"square",.07);[N.G6,N.C7].forEach((f,i)=>tone(c,f,t+.22+i*.08,.3,"sine",.1))}
+  else if(kind==="party"){[N.C5,N.E5,N.G5].forEach((f,i)=>tone(c,f,t+i*.11,.14,"triangle",.17));[N.C6,N.E5,N.G5].forEach(f=>tone(c,f,t+.33,.6,"triangle",.1));
+    [N.E6,N.G6,N.C7].forEach((f,i)=>tone(c,f,t+.45+i*.06,.25,"sine",.06))}
+}
+const CONF_COLORS=["#FF6B6B","#FFC93C","#4CC38A","#4D96FF","#B983FF","#FF9F45","#FF7EB6"];
+function confetti(n){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const box=document.createElement("div");box.className="confetti";box.setAttribute("aria-hidden","true");
+  for(let i=0;i<(n||60);i++){const p=document.createElement("i"),w=6+Math.random()*6;
+    p.style.cssText=`left:${Math.random()*100}%;width:${w}px;height:${w*(Math.random()<.5?.5:1.4)}px;background:${CONF_COLORS[i%CONF_COLORS.length]};border-radius:${Math.random()<.3?"50%":"2px"};`+
+      `--x:${(Math.random()-.5)*160}px;--r:${(Math.random()-.5)*1080}deg;animation-duration:${1.3+Math.random()*.9}s;animation-delay:${Math.random()*.25}s`;
+    box.appendChild(p)}
+  document.body.appendChild(box);setTimeout(()=>box.remove(),2700)
+}
+// One call for the big moments: finishing something, earning Stars, buying from the shop
+function celebrate(kind,n){sfx(kind);confetti(n||(kind==="party"?110:60))}
 
 function award(k,a){
   const pts=Math.round(a.s*mult(k));
@@ -638,14 +676,14 @@ function quizPanel(k){
 }
 function bindDaily(k){
   const d=dstate(k);
-  const t=document.querySelector("[data-dtry]");if(t)t.onclick=()=>{d.tried=true;const p=award(k,{s:15,p:"move"});burst(t);toast(`+${p} Stars for trying ${SPORTS[todaysSport(k)].n}!`);save();render()};
+  const t=document.querySelector("[data-dtry]");if(t)t.onclick=()=>{d.tried=true;const p=award(k,{s:15,p:"move"});burst(t);celebrate("stars");toast(`+${p} Stars for trying ${SPORTS[todaysSport(k)].n}!`);save();render()};
   document.querySelectorAll("[data-quiz]").forEach(b=>b.onclick=()=>{const kd=b.dataset.quiz;QZ={kid:k.id,kind:kd,where:"daily",title:DQ[kd].n,icon:DQ[kd].i,qs:kd==="learn"?mixQs(k):todaysQs("food",k.band),i:0,score:0,picked:null};render()});
-  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const q=QZ.qs[QZ.i];QZ.picked=+b.dataset.ans;if(QZ.picked===q.a){QZ.score++;burst(b);if(k.band==="sprout")say("Yes! "+q.why)}render()});
+  document.querySelectorAll("[data-ans]").forEach(b=>b.onclick=()=>{const q=QZ.qs[QZ.i];QZ.picked=+b.dataset.ans;if(QZ.picked===q.a){QZ.score++;burst(b);sfx("correct");if(k.band==="sprout")say("Yes! "+q.why)}render()});
   const n=document.querySelector("[data-next]");if(n)n.onclick=()=>{if(QZ.i<QZ.qs.length-1){QZ.i++;QZ.picked=null;render();return}
     const n=QZ.qs.length,sc=QZ.score,pts=sc*5+(sc===n?5:0);let pil="learn";
     if(QZ.where==="daily"){d[QZ.kind]=sc;pil=DQ[QZ.kind].p}else{S.edu=S.edu||{};S.edu[k.id]=S.edu[k.id]||{};S.edu[k.id][QZ.kind]=Math.max(sc,S.edu[k.id][QZ.kind]||0)}
     let got=0;if(pts)got=award(k,{s:pts,p:pil});QZ=null;
-    if(sc===n)party("🏆","Perfect score!",`+${got} Stars`);else toast(`${sc} of ${n} right · +${got} Stars`);save();render()};
+    if(sc===n)party("🏆","Perfect score!",`+${got} Stars`);else{if(got)celebrate("stars");toast(`${sc} of ${n} right · +${got} Stars`)}save();render()};
   const qq=document.querySelector("[data-qquit]");if(qq)qq.onclick=()=>{QZ=null;render()};
 }
 
@@ -790,7 +828,7 @@ function bindLearn(k){
   const f=$("#hwadd");if(f)f.onsubmit=e=>{e.preventDefault();const t=$("#hwtext").value.trim();if(!t)return;S.homework=S.homework||[];S.homework.push({id:"h"+Date.now(),kid:k.id,subj:$("#hwsubj").value,t,state:"todo"});toast("Homework added");save();render()};
   document.querySelectorAll("[data-hwdone]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwdone);
     if(proofOn()){openProof(k,{icon:HW_SUBJ[h.subj],t:h.t,hw:h});return}
-    h.state="pending";burst(b);toast("Sent to a parent for Stars!");save();render()});
+    h.state="pending";burst(b);celebrate("done");toast("Sent to a parent for Stars!");save();render()});
 }
 
 /* ---------- SPROUT: AI study buddy (Claude via the artifact's sample capability) ---------- */
@@ -1123,7 +1161,7 @@ function header(k){
 }
 const TIPS=["Drinking water helps your brain think clearly.","Kids need about 60 minutes of play every day!","Trying a food 10 times can make you like it.","Reading before bed helps you sleep better.","Saying thank you makes two people happy.","Your muscles grow while you sleep. Rest is part of training!","Mistakes help your brain grow. Keep trying!"];
 function tipBubble(k){return `<div class="tip"><span class="tip-m" aria-hidden="true">🌱</span><p><b>Sunny says:</b> ${TIPS[dayNo()%TIPS.length]}</p></div>`}
-function party(icon,title,sub){const p=$("#party");p.querySelector(".pi").textContent=icon;p.querySelector("b").textContent=title;p.querySelector("small").textContent=sub;p.hidden=false;
+function party(icon,title,sub){const p=$("#party");p.querySelector(".pi").textContent=icon;p.querySelector("b").textContent=title;p.querySelector("small").textContent=sub;p.hidden=false;celebrate("party");
   for(let i=0;i<3;i++)setTimeout(()=>burst(p.querySelector(".pi")),i*250);clearTimeout(party._t);party._t=setTimeout(()=>p.hidden=true,2400)}
 function stateLabel(k,st){
   if(st==="done")return "✓ Done";
@@ -1206,13 +1244,13 @@ function bindKid(k){
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=actById(b.dataset.act);S.today[k.id]=S.today[k.id]||{};
     if(k.band!=="sprout"&&proofOn()){openProof(k,a);return}
-    if(k.band==="trail"){S.today[k.id][a.id]="done";const p=award(k,a);burst(b);toast(`+${p} Stars! Nice work, ${k.name}.`)}
-    else{S.today[k.id][a.id]="pending";burst(b);toast(k.band==="sprout"?"Yay! A grown-up will give you your Stars.":"Sent to a parent for Stars!");if(k.band==="sprout")say("Great job, "+k.name+"!")}
+    if(k.band==="trail"){S.today[k.id][a.id]="done";const p=award(k,a);burst(b);celebrate("stars");toast(`+${p} Stars! Nice work, ${k.name}.`)}
+    else{S.today[k.id][a.id]="pending";burst(b);celebrate("done");toast(k.band==="sprout"?"Yay! A grown-up will give you your Stars.":"Sent to a parent for Stars!");if(k.band==="sprout")say("Great job, "+k.name+"!")}
     save();render();
   });
   document.querySelectorAll("[data-buy]").forEach(b=>b.onclick=()=>{
     const r=rewardById(b.dataset.buy);if(k.stars<r.c)return;
-    S.requests.push({id:"q"+Date.now(),kid:k.id,reward:r.id,state:"asked"});burst(b);toast("Asked a parent for: "+r.t);save();render();
+    S.requests.push({id:"q"+Date.now(),kid:k.id,reward:r.id,state:"asked"});burst(b);celebrate("buy");toast("Asked a parent for: "+r.t);save();render();
   });
 }
 
@@ -1277,6 +1315,11 @@ function viewSettings(){
     <p class="note" style="margin-top:6px">Sprout is an AI study buddy powered by Claude. It answers questions at your child's age and grade, helps with homework step by step without handing over answers, and makes quizzes and practice tests. It steers away from grown-up topics and reminds kids never to share personal info.</p>
     <div class="list" style="margin-top:10px"><label class="tgl"><input type="checkbox" id="setai" ${S.settings.ai?"checked":""}><span>I'm the parent and I allow my kids to chat with Sprout</span></label></div>
     <h4 class="vh">Chat history</h4><div class="list" style="margin-top:6px">${chatHistory()}</div></div>
+  <div class="card"><div class="section-title"><h3>🔊 Sounds</h3><span class="tag ${soundOn()?"st-approved":""}">${soundOn()?"On":"Off"}</span></div>
+    <p class="note" style="margin-top:6px">Short happy sounds play when kids finish an activity, earn Stars or get something from the shop. Confetti always shows. On iPhone, sounds stay quiet when the ring switch is on silent.</p>
+    <div class="list" style="margin-top:10px">
+      <label class="tgl"><input type="checkbox" id="setsound" ${soundOn()?"checked":""}><span>Play celebration sounds</span></label>
+    </div></div>
   <div class="card"><div class="section-title"><h3>🎥 Video proof</h3><span class="tag ${S.settings.proof?"st-approved":""}">${S.settings.proof?"On":"Off"}</span></div>
     <p class="note" style="margin-top:6px">When on, kids 6 and up can record a video (any length) or take a photo of an activity and send it to you. Clips stay on this family’s devices and only parents can see them. You choose which options your kids see.</p>
     <div class="list" style="margin-top:10px">
@@ -1333,16 +1376,17 @@ function bindParent(){
   const ga=$("#gadd");if(ga)ga.onsubmit=e=>{e.preventDefault();const k=kid($("#gkid").value),t=Math.max(5,Math.min(2000,parseInt($("#gtarget").value,10)||50)),r=$("#greward").value.trim();if(!r)return;
     S.goals=S.goals||[];S.goals.push({id:"g"+Date.now(),kid:k.id,target:t,reward:r,icon:gicon,start:k.lifetime,state:"active"});toast(`Goal set for ${k.name}`);save();render()};
   document.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{S.goals=S.goals.filter(g=>g.id!==b.dataset.gdel);toast("Goal removed");save();render()});
-  document.querySelectorAll("[data-ggive]").forEach(b=>b.onclick=()=>{const g=S.goals.find(x=>x.id===b.dataset.ggive);g.state="given";if(S.settings.screen.on&&screenMins(g.reward))addMinutes(kid(g.kid),screenMins(g.reward));burst(b);toast(`${g.reward} for ${kid(g.kid).name}!`);save();render()});
+  document.querySelectorAll("[data-ggive]").forEach(b=>b.onclick=()=>{const g=S.goals.find(x=>x.id===b.dataset.ggive);g.state="given";if(S.settings.screen.on&&screenMins(g.reward))addMinutes(kid(g.kid),screenMins(g.reward));burst(b);celebrate("buy");toast(`${g.reward} for ${kid(g.kid).name}!`);save();render()});
   const sa=$("#setai");if(sa)sa.onchange=()=>{S.settings.ai=sa.checked;toast(sa.checked?"Sprout is on for your kids":"Sprout is off");save();render()};
   document.querySelectorAll("[data-chclear]").forEach(b=>b.onclick=()=>{delete S.chats[b.dataset.chclear];toast("Chats deleted");save();render()});
-  document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);toast(`${k.name} got ${p} Stars for homework`);save();render()});
+  document.querySelectorAll("[data-hwok]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwok),k=kid(h.kid);if(S.settings.autoDelete)dropProof(h.kid,"hw"+h.id);h.state="done";const p=award(k,{s:20,p:"learn"});burst(b);celebrate("stars");toast(`${k.name} got ${p} Stars for homework`);save();render()});
   document.querySelectorAll("[data-hwno]").forEach(b=>b.onclick=()=>{const h=S.homework.find(x=>x.id===b.dataset.hwno);dropProof(h.kid,"hw"+h.id);h.state="todo";toast("Sent back to the homework list");save();render()});
   document.querySelectorAll("[data-grade]").forEach(sel=>sel.onchange=()=>{kid(sel.dataset.grade).grade=+sel.value;toast("Grade updated. Quizzes will match it.");save()});
   const ss=$("#setstate");if(ss)ss.onchange=()=>{S.settings.state=ss.value;toast("State set to "+ss.value);save()};
   const sp=$("#setproof");if(sp)sp.onchange=()=>{S.settings.proof=sp.checked;if(!sp.checked)Object.keys(PROOFS).forEach(k=>{const [a,b]=k.split("|");dropProof(a,b)});toast(sp.checked?"Video proof turned on":"Video proof off. Saved clips deleted.");save();render()};
   document.querySelectorAll("[data-opt]").forEach(c=>c.onchange=()=>{S.settings.opts[c.dataset.opt]=c.checked;save();render()});
   const sd=$("#setdel");if(sd)sd.onchange=()=>{S.settings.autoDelete=sd.checked;save()};
+  const snd=$("#setsound");if(snd)snd.onchange=()=>{S.settings.sound=snd.checked;save();if(snd.checked)sfx("done");render()};
   document.querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.pdel.split("|");dropProof(id,aid);toast("Clip deleted");render()});
   S.vids=S.vids||{};
   document.querySelectorAll("[data-vok]").forEach(b=>b.onclick=()=>{S.vids[b.dataset.vok]={ok:true};toast("Approved");save();render()});
@@ -1352,10 +1396,10 @@ function bindParent(){
     const m=v.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/)||v.match(/^([\w-]{11})$/);
     if(!m){toast("That doesn’t look like a YouTube link");return}
     S.vids[f.dataset.vform]={id:m[1],t:"Your pick ("+m[1]+")",ok:true};VEDIT=null;toast("Saved. Kids will see this video.");save();render()});
-  document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.approve.split("|");if(S.settings.autoDelete)dropProof(id,aid);const k=kid(id);S.today[id][aid]="done";const p=award(k,actById(aid));burst(b);toast(`${k.name} got ${p} Stars`);save();render()});
+  document.querySelectorAll("[data-approve]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.approve.split("|");if(S.settings.autoDelete)dropProof(id,aid);const k=kid(id);S.today[id][aid]="done";const p=award(k,actById(aid));burst(b);celebrate("stars");toast(`${k.name} got ${p} Stars`);save();render()});
   document.querySelectorAll("[data-deny]").forEach(b=>b.onclick=()=>{const [id,aid]=b.dataset.deny.split("|");dropProof(id,aid);delete S.today[id][aid];toast("Moved back to the quest list");save();render()});
   document.querySelectorAll("[data-rok]").forEach(b=>b.onclick=()=>{const q=S.requests.find(x=>x.id===b.dataset.rok),k=kid(q.kid),r=rewardById(q.reward);
-    if(k.stars<r.c){toast(`${k.name} needs ${r.c-k.stars} more Stars`);return}k.stars-=r.c;q.state="given";if(S.settings.screen.on&&screenMins(r.t))addMinutes(k,screenMins(r.t));burst(b);toast(`${r.t} for ${k.name}!`);save();render()});
+    if(k.stars<r.c){toast(`${k.name} needs ${r.c-k.stars} more Stars`);return}k.stars-=r.c;q.state="given";if(S.settings.screen.on&&screenMins(r.t))addMinutes(k,screenMins(r.t));burst(b);celebrate("buy");toast(`${r.t} for ${k.name}!`);save();render()});
   document.querySelectorAll("[data-rdeny]").forEach(b=>b.onclick=()=>{S.requests.find(x=>x.id===b.dataset.rdeny).state="later";toast("Saved for later");save();render()});
   document.querySelectorAll("[data-inc]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.inc);r.c=Math.min(1000,r.c+10);save();render()});
   document.querySelectorAll("[data-dec]").forEach(b=>b.onclick=()=>{const r=rewardById(b.dataset.dec);r.c=Math.max(10,r.c-10);save();render()});
@@ -1382,7 +1426,7 @@ function dropProof(id,aid){const k=id+"|"+aid,p=PROOFS[k];if(p&&p.url)URL.revoke
 let PCTX=null;
 function openProof(k,a){PCTX={k,a};const o=S.settings.opts;$("#optv").hidden=!o.video;$("#opti").hidden=!o.photo;$("#psaw").hidden=!o.saw;$("#prtitle").textContent=a.icon+" "+a.t;$("#proof").hidden=false}
 function closeProof(){$("#proof").hidden=true;PCTX=null;$("#pvid").value="";$("#pimg").value=""}
-function sendProof(type,url){const {k,a}=PCTX;if(a.hw){a.hw.state="pending";PROOFS[k.id+"|hw"+a.hw.id]={type,url}}else{S.today[k.id][a.id]="pending";PROOFS[k.id+"|"+a.id]={type,url}}closeProof();
+function sendProof(type,url){const {k,a}=PCTX;if(a.hw){a.hw.state="pending";PROOFS[k.id+"|hw"+a.hw.id]={type,url}}else{S.today[k.id][a.id]="pending";PROOFS[k.id+"|"+a.id]={type,url}}closeProof();celebrate("done");
   toast(type==="saw"?"Sent to your parent for Stars!":(type==="video"?"Video":"Photo")+" sent to your parent. Only they can see it.");save();render()}
 $("#pvid").onchange=e=>{const f=e.target.files[0];if(f)sendProof("video",URL.createObjectURL(f))};
 $("#pimg").onchange=e=>{const f=e.target.files[0];if(f)sendProof("photo",URL.createObjectURL(f))};
