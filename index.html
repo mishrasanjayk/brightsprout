@@ -52,6 +52,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var
 .chip .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:16px;background:var(--surface-2)}
 .chip[aria-pressed="true"]{border-color:var(--leaf);background:var(--leaf);color:var(--leaf-ink)}
 .chip[aria-pressed="true"] .av{background:rgba(255,255,255,.25)}
+.vgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.vbtn{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:16px;border:2px solid var(--line);background:var(--surface);font-weight:800;font-size:15px;text-align:left;color:inherit}.vbtn span{font-size:22px}.vbtn[aria-pressed="true"]{border-color:var(--leaf);background:var(--leaf);color:var(--leaf-ink)}
 .chip .age{font-weight:600;opacity:.75;font-size:12px}
 main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px 110px;display:flex;flex-direction:column;gap:16px}
 .card{background:var(--surface);border-radius:20px;padding:16px;box-shadow:var(--shadow);border:1px solid var(--line)}
@@ -223,6 +224,7 @@ body.kidmode{background-color:var(--bg);background-image:radial-gradient(color-m
 .sproutcard b{display:block;font-family:var(--display);font-size:18px;font-weight:600}.sproutcard small{color:var(--muted);font-weight:700;font-size:13px}
 .sproutcard.off{border-style:dashed;border-color:var(--line)}
 .askfab{position:fixed;z-index:7;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--leaf);color:var(--leaf-ink);font-weight:800;font-size:15px;padding:12px 16px;border-radius:999px;box-shadow:0 4px 0 rgba(0,0,0,.2),0 6px 18px rgba(0,0,0,.18)}
+.micbtn{width:100%;padding:16px;border-radius:18px;font-weight:800;font-size:18px;background:var(--sky);color:#fff}.micbtn.on{background:var(--berry);animation:bob 1s ease-in-out infinite}.micbtn:disabled{opacity:.5}
 .chat-in{height:min(88vh,720px);display:flex;flex-direction:column;gap:10px}
 .chat-h{flex:none}
 .msgs{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:4px 2px}
@@ -512,7 +514,40 @@ function burst(el){
     const a=Math.random()*Math.PI*2,d=60+Math.random()*60;b.style.setProperty("--dx",Math.cos(a)*d+"px");b.style.setProperty("--dy",Math.sin(a)*d-40+"px");
     document.body.appendChild(b);setTimeout(()=>b.remove(),1000)}
 }
-function say(text){try{const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=1.2;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+// Old single-voice version, kept for reference (replaced by kid voices below):
+// function say(text){try{const u=new SpeechSynthesisUtterance(text);u.rate=.9;u.pitch=1.2;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+/* ---------- KID VOICES: each kid picks how the app talks to them. Uses the phone's built-in voices with pitch and speed changed (no sound files). ---------- */
+const VOICES=[
+  {id:"friendly",i:"😊",n:"Friendly",g:"f",p:1.2,r:.9},
+  {id:"hiwoman",i:"🧚",n:"High woman",g:"f",p:1.7,r:1},
+  {id:"calmwoman",i:"🌸",n:"Calm woman",g:"f",p:.9,r:.85},
+  {id:"himan",i:"🤠",n:"High man",g:"m",p:1.5,r:1},
+  {id:"deepman",i:"🐻",n:"Deep man",g:"m",p:.5,r:.85},
+  {id:"robot",i:"🤖",n:"Robot",g:"r",p:.3,r:.8},
+  {id:"chipmunk",i:"🐿️",n:"Chipmunk",g:"f",p:2,r:1.35},
+  {id:"off",i:"🤫",n:"No talking",g:"",p:1,r:1}];
+const VNAMES={m:/aaron|alex\b|daniel|fred|gordon|arthur|rishi|reed|ralph|eddy|grandpa|rocko|tom|oliver|lee|male|david|mark|guy|ryan|christopher|eric|james/i,
+  f:/samantha|karen|moira|tessa|victoria|nicky|kathy|flo|shelley|sandy|grandma|susan|allison|ava|serena|female|zira|aria|jenny|michelle|google us english/i,
+  r:/zarvox|trinoids|ralph|fred/i};
+let VLIST=[];
+function loadVoices(){try{VLIST=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang))}catch(e){}}
+try{loadVoices();speechSynthesis.addEventListener("voiceschanged",loadVoices)}catch(e){}
+function sysVoice(g){if(!g||!VLIST.length)return null;const pool=VLIST.filter(v=>VNAMES[g].test(v.name));
+  if(!pool.length&&g==="r")return sysVoice("m");return pool.find(v=>/en-US/i.test(v.lang))||pool[0]||null}
+const kidVoiceId=k=>k&&k.voice?k.voice:(k&&k.band==="sprout"?"friendly":"off");
+const vById=id=>VOICES.find(v=>v.id===id)||VOICES[0];
+// force: a kid tapped a read-aloud button, so speak even with "No talking" (in the friendly voice)
+function say(text,k,force){
+  try{k=k||(S.who&&S.who!=="parent"?kid(S.who):null);let v=vById(kidVoiceId(k));
+    if(v.id==="off"){if(!force)return;v=VOICES[0]}
+    const u=new SpeechSynthesisUtterance(String(text).replace(/\p{Extended_Pictographic}|\uFE0F/gu,"")),sv=sysVoice(v.g);if(sv){u.voice=sv;u.lang=sv.lang}
+    u.rate=v.r;u.pitch=v.p;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}
+}
+const CHEERS={done:["Great job!","You did it!","Awesome work!"],stars:["Woo-hoo! More Stars!","Super star!","Way to go!"],
+  buy:["Ooh, nice pick!","Treat time!","Great choice!"],party:["Amazing! You did it!","Hooray! Perfect!"]};
+// Kids who picked a voice hear a short cheer at each celebration (follows the Sounds switch in Settings)
+function cheer(kind){if(!soundOn()||!CHEERS[kind]||!S.who||S.who==="parent")return;const k=kid(S.who);if(!k||kidVoiceId(k)==="off")return;
+  const c=CHEERS[kind];say(c[Math.floor(Math.random()*c.length)]+(Math.random()<.4?" "+k.name+"!":""),k)}
 /* ---------- HAPPY SOUNDS + CONFETTI: tones made with Web Audio (no sound files). iOS only allows audio after a tap, so we unlock on the first touch. ---------- */
 const FX={ctx:null};
 const soundOn=()=>S.settings.sound!==false;
@@ -548,7 +583,7 @@ function confetti(n){
   document.body.appendChild(box);setTimeout(()=>box.remove(),2700)
 }
 // One call for the big moments: finishing something, earning Stars, buying from the shop
-function celebrate(kind,n){sfx(kind);confetti(n||(kind==="party"?110:60))}
+function celebrate(kind,n){sfx(kind);confetti(n||(kind==="party"?110:60));cheer(kind)}
 
 function award(k,a){
   const pts=Math.round(a.s*mult(k));
@@ -847,29 +882,43 @@ Rules you must always follow:
 - If you don't know or aren't sure, say so.`}
 const PII=/(\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b)|([\w.+-]+@[\w-]+\.[\w.]+)|(\b\d{1,5}\s+\w+\s+(street|st|avenue|ave|road|rd|lane|ln|drive|dr)\b)/i;
 function chatLog(k){S.chats=S.chats||{};return S.chats[k.id]=S.chats[k.id]||[]}
-function openChat(k){CHAT={kid:k.id,busy:false,mode:null};$("#chat").hidden=false;renderChat();setTimeout(()=>{const i=$("#cin");if(i)i.focus()},50)}
-function closeChat(){if(CHAT&&CHAT.ctl)CHAT.ctl.abort();CHAT=null;$("#chat").hidden=true}
+function openChat(k){CHAT={kid:k.id,busy:false,mode:null,listening:false,talked:false};$("#chat").hidden=false;renderChat();setTimeout(()=>{const i=$("#cin");if(i)i.focus()},50)}
+function closeChat(){stopListen();try{speechSynthesis.cancel()}catch(e){}if(CHAT&&CHAT.ctl)CHAT.ctl.abort();CHAT=null;$("#chat").hidden=true}
 function renderChat(){
   if(!CHAT)return;const k=kid(CHAT.kid),log=chatLog(k),box=$("#chat .sheet-in");
   const unavailable=SAMPLE===null;
   box.innerHTML=`<div class="row chat-h"><span class="tip-m" aria-hidden="true">🌱</span><div class="grow"><b style="font-family:var(--display);font-size:19px">Sprout</b><small class="note" style="display:block">Your AI study buddy · ${GRADE_NAMES[gradeOf(k)]}</small></div><button class="no" id="cclose">Close</button></div>
   <div class="msgs" id="msgs">${log.length?"":`<div class="msg bot">Hi ${esc(k.name)}! 🌱 I'm Sprout. Ask me anything you're curious about, or tap a button below. I can help with homework, make quizzes and practice tests!</div>`}
-    ${log.slice(-40).map(m=>`<div class="msg ${m.role==="user"?"me":"bot"}">${esc(m.content)}</div>`).join("")}
+    ${log.slice(-40).map((m,i)=>`<div class="msg ${m.role==="user"?"me":"bot"}">${esc(m.content)}${m.role==="user"?"":` <button class="speak" data-csay="${i}" aria-label="Read aloud">🔊</button>`}</div>`).join("")}
     ${CHAT.busy?`<div class="msg bot typing" id="live">${CHAT.live?esc(CHAT.live):"Sprout is thinking…"}</div>`:""}</div>
   ${unavailable?`<p class="note warnbox">Sprout needs the Claude version of the app to think. Open the Claude preview link to chat with Sprout. In the real app, Sprout runs through BrightSprout's own secure server.</p>`:
   CHAT.mode?`<form class="addform" id="cmode"><input id="ctopic" placeholder="${CHAT.mode==="hw"?"What's the homework question?":"Topic, e.g. fractions, planets, US presidents"}" maxlength="200" required><button class="ok" type="submit">${CHAT.mode==="hw"?"Help me":"Make it"}</button><button class="no" type="button" id="cmodex">Back</button></form>`:
   `<div class="chips">${[["hw","📒 Help with homework"],["quiz","🧩 Quiz me"],["test","📝 Practice test"],["fact","💡 Fun fact"]].map(([m,l])=>`<button class="pfilter" data-cm="${m}" ${CHAT.busy?"disabled":""}>${l}</button>`).join("")}</div>
-  <form class="addform" id="cform"><input id="cin" placeholder="Ask Sprout a question…" maxlength="300" autocomplete="off" ${CHAT.busy?"disabled":""}><button class="ok" type="submit" ${CHAT.busy?"disabled":""}>Send</button>${CHAT.busy?`<button class="no" type="button" id="cstop">Stop</button>`:""}</form>`}
+  <form class="addform" id="cform"><input id="cin" placeholder="Ask Sprout a question…" maxlength="300" autocomplete="off" ${CHAT.busy?"disabled":""}><button class="ok" type="submit" ${CHAT.busy?"disabled":""}>Send</button>${CHAT.busy?`<button class="no" type="button" id="cstop">Stop</button>`:""}</form>
+  ${SR?`<button class="micbtn${CHAT.listening?" on":""}" type="button" id="cmic" ${CHAT.busy?"disabled":""} aria-label="${CHAT.listening?"Stop listening":"Talk to Sprout"}">${CHAT.listening?"👂 Listening… tap when done":"🎤 Tap and talk to Sprout"}</button>`:""}`}
   <p class="demo" style="margin-top:6px">Sprout is an AI and can make mistakes. Your parents can read these chats.</p>`;
   const m=$("#msgs");m.scrollTop=m.scrollHeight;
   $("#cclose").onclick=closeChat;
   const f=$("#cform");if(f)f.onsubmit=e=>{e.preventDefault();const v=$("#cin").value.trim();if(v)ask(k,v)};
   const st=$("#cstop");if(st)st.onclick=()=>CHAT.ctl&&CHAT.ctl.abort();
+  const mic=$("#cmic");if(mic)mic.onclick=()=>CHAT.listening?stopListen():listen(k);
+  document.querySelectorAll("[data-csay]").forEach(b=>b.onclick=()=>{const m=log.slice(-40)[+b.dataset.csay];if(m)say(m.content,k,true)});
   document.querySelectorAll("[data-cm]").forEach(b=>b.onclick=()=>{const md=b.dataset.cm;if(md==="fact"){ask(k,"Tell me one fun, true fact I can learn today.");return}CHAT.mode=md;renderChat();$("#ctopic").focus()});
   const cm=$("#cmode");if(cm)cm.onsubmit=e=>{e.preventDefault();const v=$("#ctopic").value.trim(),md=CHAT.mode;CHAT.mode=null;if(!v)return;
     if(md==="hw")ask(k,"Can you help me with my homework? Here it is: "+v);else makeQuiz(k,v,md==="test"?10:5)};
   const mx=$("#cmodex");if(mx)mx.onclick=()=>{CHAT.mode=null;renderChat()};
 }
+/* Talk to Sprout: speech-to-text for kids who can't type yet (Safari on iPhone and Chrome support it). Replies are read aloud in the kid's chosen voice. */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition||null;let REC=null;
+function listen(k){
+  if(!SR||!CHAT)return;try{speechSynthesis.cancel()}catch(e){}
+  let heard="";REC=new SR();REC.lang="en-US";REC.interimResults=true;REC.continuous=false;REC.maxAlternatives=1;
+  REC.onresult=e=>{heard=[...e.results].map(r=>r[0].transcript).join(" ");const i=$("#cin");if(i)i.value=heard};
+  REC.onerror=e=>{toast(e.error==="not-allowed"||e.error==="service-not-allowed"?"Ask a grown-up to allow the microphone":e.error==="no-speech"?"I didn't hear anything. Try again!":"Talking didn't work. Try again!")};
+  REC.onend=()=>{REC=null;if(!CHAT)return;CHAT.listening=false;const t=heard.trim();if(t){CHAT.talked=true;ask(k,t)}else renderChat()};
+  try{REC.start();CHAT.listening=true;renderChat()}catch(e){REC=null;toast("Talking didn't work. Try again!")}
+}
+function stopListen(){if(REC)try{REC.stop()}catch(e){}}
 function errCopy(e){return ({not_granted:"Sprout needs permission to think. Ask a parent to allow it.",rate_limited:"Sprout needs a short break. Try again in a minute.",aborted:"Stopped."})[e&&e.code]||"Sprout couldn't answer just now. Try again in a bit."}
 async function ask(k,text){
   if(PII.test(text)){toast("Keep personal info like phone numbers, emails and addresses private!");return}
@@ -879,7 +928,7 @@ async function ask(k,text){
   turns[0]={role:"user",content:sproutRules(k)+"\n\n---\n"+k.name+" says: "+turns[0].content};
   CHAT.ctl=new AbortController();
   try{const r=await SAMPLE(turns,{signal:CHAT.ctl.signal,cache:false,onText:({text})=>{if(!CHAT)return;CHAT.live=text;const l=$("#live");if(l){l.textContent=text;const m=$("#msgs");m.scrollTop=m.scrollHeight}}});
-    log.push({role:"assistant",content:r.text.trim(),ts:Date.now()});if(k.band==="sprout")say(r.text)}
+    log.push({role:"assistant",content:r.text.trim(),ts:Date.now()});if(CHAT&&CHAT.talked)say(r.text,k,true);else if(k.band==="sprout")say(r.text,k)}
   catch(e){log.push({role:"assistant",content:(e&&e.text?e.text+"\n\n":"")+errCopy(e),ts:Date.now()})}
   if(CHAT){CHAT.busy=false;CHAT.live=""}save();renderChat();
 }
@@ -1230,7 +1279,11 @@ function viewMe(k){
   <div class="card"><div class="section-title"><h3>Badges</h3><span>${BADGES.filter(b=>b.test(k)).length} of ${BADGES.length}</span></div>
     <div class="badges" style="margin-top:12px">${BADGES.map(b=>`<div class="bdg ${b.test(k)?"on":""}"><span class="m" aria-hidden="true">${b.icon}</span>${b.n}</div>`).join("")}</div></div>
   <div class="card"><div class="section-title"><h3>My habits this week</h3></div>
-    <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>`;
+    <div class="list" style="margin-top:10px">${Object.entries(PILLARS).map(([id,p])=>`<div class="mini"><span>${p.icon} ${p.name.split(" ")[0]}</span><div class="bar"><i style="width:${(k.pillar[id]||0)/max*100}%"></i></div><em>${k.pillar[id]||0}</em></div>`).join("")}</div></div>
+  <div class="card"><div class="section-title"><h3>🗣️ My talking voice</h3><span>${vById(kidVoiceId(k)).n}</span></div>
+    <p class="note" style="margin-top:4px">Pick how the app cheers for you. Tap one to hear it!</p>
+    <div class="vgrid">${VOICES.map(v=>`<button class="vbtn" data-voice="${v.id}" aria-pressed="${kidVoiceId(k)===v.id}"><span aria-hidden="true">${v.i}</span>${v.n}</button>`).join("")}</div>
+    <button class="qbtn" data-vtry style="width:100%;margin-top:10px">▶ Try it</button></div>`;
 }
 function bindLock(k){const b=document.querySelector("[data-askmore]");if(b)b.onclick=()=>{S.timeReq=S.timeReq||[];S.timeReq.push({id:"t"+Date.now(),kid:k.id,state:"asked"});toast("Asked a parent for more time");save();render()}}
 function bindKid(k){
@@ -1240,7 +1293,9 @@ function bindKid(k){
   bindDaily(k);
   document.querySelectorAll("[data-sport]").forEach(b=>b.onclick=()=>{const id=b.dataset.sport;k.sports=k.sports.includes(id)?k.sports.filter(x=>x!==id):[...k.sports,id];save();render()});
   document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{S.filter=b.dataset.f;save();render()});
-  document.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
+  document.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say,k,true));
+  document.querySelectorAll("[data-voice]").forEach(b=>b.onclick=()=>{k.voice=b.dataset.voice;save();render();if(k.voice!=="off")say(`Hi ${k.name}! This is my ${vById(k.voice).n.toLowerCase()} voice.`,k)});
+  const vt=document.querySelector("[data-vtry]");if(vt)vt.onclick=()=>say(kidVoiceId(k)==="off"?"I will stay quiet.":`Great job, ${k.name}! You earned 10 Stars!`,k,true);
   document.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
     const a=actById(b.dataset.act);S.today[k.id]=S.today[k.id]||{};
     if(k.band!=="sprout"&&proofOn()){openProof(k,a);return}
