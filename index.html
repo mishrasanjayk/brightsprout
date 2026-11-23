@@ -866,8 +866,23 @@ function bindLearn(k){
     h.state="pending";burst(b);celebrate("done");toast("Sent to a parent for Stars!");save();render()});
 }
 
-/* ---------- SPROUT: AI study buddy (Claude via the artifact's sample capability) ---------- */
-const SAMPLE_P=(window.claude&&claude.use)?claude.use("sample").catch(()=>null):Promise.resolve(null);
+/* ---------- SPROUT: AI study buddy ----------
+   In the Claude preview, Sprout thinks through the artifact's sample capability.
+   On the live site, Sprout thinks through BrightSprout's own small server (worker/sprout.js, a Cloudflare Worker)
+   that holds the AI key and Sprout's safety rules. The child's name is never sent, only age, grade and state. */
+const SPROUT_API="";
+function remoteSprout(){
+  async function call(body,signal){let r;
+    try{r=await fetch(SPROUT_API,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),signal})}
+    catch(e){throw {code:e&&e.name==="AbortError"?"aborted":"offline"}}
+    let d=null;try{d=await r.json()}catch(e){}
+    if(!r.ok||!d||d.error)throw {code:(d&&d.error)||"server"};return d}
+  const who=k=>({age:k.age,grade:GRADE_NAMES[gradeOf(k)],state:S.settings.state});
+  return {remote:true,
+    chat:async(k,turns,o)=>{const d=await call({mode:"chat",...who(k),messages:turns},o.signal);return {text:String(d.text||"")}},
+    quiz:async(k,topic,n,o)=>call({mode:"quiz",...who(k),topic,n},o.signal)};
+}
+const SAMPLE_P=(window.claude&&claude.use)?claude.use("sample").catch(()=>SPROUT_API?remoteSprout():null):Promise.resolve(SPROUT_API?remoteSprout():null);
 let SAMPLE=undefined;SAMPLE_P.then(s=>{SAMPLE=s;if(!$("#chat").hidden)renderChat()});
 let CHAT=null; // {kid, busy, ctl, mode}
 function sproutRules(k){const g=gradeOf(k);return `You are Sprout, a cheerful, patient study buddy inside BrightSprout, a healthy-habits app for kids. You are talking with ${k.name}, who is ${k.age} years old and in ${GRADE_NAMES[g]} in ${S.settings.state}, USA.
@@ -891,7 +906,7 @@ function renderChat(){
   <div class="msgs" id="msgs">${log.length?"":`<div class="msg bot">Hi ${esc(k.name)}! 🌱 I'm Sprout. Ask me anything you're curious about, or tap a button below. I can help with homework, make quizzes and practice tests!</div>`}
     ${log.slice(-40).map((m,i)=>`<div class="msg ${m.role==="user"?"me":"bot"}">${esc(m.content)}${m.role==="user"?"":` <button class="speak" data-csay="${i}" aria-label="Read aloud">🔊</button>`}</div>`).join("")}
     ${CHAT.busy?`<div class="msg bot typing" id="live">${CHAT.live?esc(CHAT.live):"Sprout is thinking…"}</div>`:""}</div>
-  ${unavailable?`<p class="note warnbox">Sprout needs the Claude version of the app to think. Open the Claude preview link to chat with Sprout. In the real app, Sprout runs through BrightSprout's own secure server.</p>`:
+  ${unavailable?`<p class="note warnbox">Sprout is still getting ready to chat on this app. Check back soon! 🌱</p>`:
   CHAT.mode?`<form class="addform" id="cmode"><input id="ctopic" placeholder="${CHAT.mode==="hw"?"What's the homework question?":"Topic, e.g. fractions, planets, US presidents"}" maxlength="200" required><button class="ok" type="submit">${CHAT.mode==="hw"?"Help me":"Make it"}</button><button class="no" type="button" id="cmodex">Back</button></form>`:
   `<div class="chips">${[["hw","📒 Help with homework"],["quiz","🧩 Quiz me"],["test","📝 Practice test"],["fact","💡 Fun fact"]].map(([m,l])=>`<button class="pfilter" data-cm="${m}" ${CHAT.busy?"disabled":""}>${l}</button>`).join("")}</div>
   <form class="addform" id="cform"><input id="cin" placeholder="Ask Sprout a question…" maxlength="300" autocomplete="off" ${CHAT.busy?"disabled":""}><button class="ok" type="submit" ${CHAT.busy?"disabled":""}>Send</button>${CHAT.busy?`<button class="no" type="button" id="cstop">Stop</button>`:""}</form>
@@ -919,15 +934,16 @@ function listen(k){
   try{REC.start();CHAT.listening=true;renderChat()}catch(e){REC=null;toast("Talking didn't work. Try again!")}
 }
 function stopListen(){if(REC)try{REC.stop()}catch(e){}}
-function errCopy(e){return ({not_granted:"Sprout needs permission to think. Ask a parent to allow it.",rate_limited:"Sprout needs a short break. Try again in a minute.",aborted:"Stopped."})[e&&e.code]||"Sprout couldn't answer just now. Try again in a bit."}
+function errCopy(e){return ({not_granted:"Sprout needs permission to think. Ask a parent to allow it.",rate_limited:"Sprout needs a short break. Try again in a minute.",aborted:"Stopped.",offline:"Sprout can't reach the internet. Check your Wi-Fi and try again.",bad_quiz:"Hmm, I couldn't make good questions for that. Try a different topic!",not_set_up:"Sprout is still being set up. Try again later!"})[e&&e.code]||"Sprout couldn't answer just now. Try again in a bit."}
 async function ask(k,text){
   if(PII.test(text)){toast("Keep personal info like phone numbers, emails and addresses private!");return}
   const log=chatLog(k);log.push({role:"user",content:text,ts:Date.now()});CHAT.busy=true;CHAT.live="";save();renderChat();
   const turns=log.slice(-12).map(m=>({role:m.role,content:m.content}));
   while(turns.length&&turns[0].role!=="user")turns.shift();
+  const plain=turns.map(t=>({...t}));
   turns[0]={role:"user",content:sproutRules(k)+"\n\n---\n"+k.name+" says: "+turns[0].content};
   CHAT.ctl=new AbortController();
-  try{const r=await SAMPLE(turns,{signal:CHAT.ctl.signal,cache:false,onText:({text})=>{if(!CHAT)return;CHAT.live=text;const l=$("#live");if(l){l.textContent=text;const m=$("#msgs");m.scrollTop=m.scrollHeight}}});
+  try{const r=SAMPLE.remote?await SAMPLE.chat(k,plain,{signal:CHAT.ctl.signal}):await SAMPLE(turns,{signal:CHAT.ctl.signal,cache:false,onText:({text})=>{if(!CHAT)return;CHAT.live=text;const l=$("#live");if(l){l.textContent=text;const m=$("#msgs");m.scrollTop=m.scrollHeight}}});
     log.push({role:"assistant",content:r.text.trim(),ts:Date.now()});if(CHAT&&CHAT.talked)say(r.text,k,true);else if(k.band==="sprout")say(r.text,k)}
   catch(e){log.push({role:"assistant",content:(e&&e.text?e.text+"\n\n":"")+errCopy(e),ts:Date.now()})}
   if(CHAT){CHAT.busy=false;CHAT.live=""}save();renderChat();
@@ -939,7 +955,7 @@ async function makeQuiz(k,topic,n){
   const prompt=sproutRules(k)+`\n\n---\nWrite a ${n}-question multiple-choice ${n===10?"practice test":"quiz"} about "${topic}" for a ${GRADE_NAMES[g]} student in the USA, matching US school standards for that grade. If the topic is not appropriate for a child, use a fun, safe science topic instead.
 Return ONLY JSON: {"title": short title, "questions": [{"q": question, "options": [3 or 4 short answers], "answer": index of the correct option (0-based), "why": one kid-friendly sentence explaining the answer}]}. Every fact must be correct.`;
   CHAT.ctl=new AbortController();
-  try{const d=await SAMPLE.json(prompt,{signal:CHAT.ctl.signal,cache:false});
+  try{const d=SAMPLE.remote?await SAMPLE.quiz(k,topic,n,{signal:CHAT.ctl.signal}):await SAMPLE.json(prompt,{signal:CHAT.ctl.signal,cache:false});
     const qs=(d&&Array.isArray(d.questions)?d.questions:[]).filter(x=>x&&x.q&&Array.isArray(x.options)&&x.options.length>=2&&Number.isInteger(x.answer)&&x.answer>=0&&x.answer<x.options.length).slice(0,n).map(x=>({q:String(x.q),opts:x.options.map(String),a:x.answer,why:String(x.why||"")}));
     if(qs.length<3)throw {code:"bad"};
     log.push({role:"assistant",content:`Your ${n===10?"practice test":"quiz"} "${d.title||topic}" is ready with ${qs.length} questions. Good luck! 🍀`,ts:Date.now()});save();
